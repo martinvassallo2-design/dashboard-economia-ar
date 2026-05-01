@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Económico · Argentina</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: #080c18;
+      color: #dde1f0;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      padding: 18px 28px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      background: #080c18;
+      z-index: 100;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+    .topbar-left h1 { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #8890b0; }
+
+    .live { display: flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4a5272; }
+    .dot-live { width: 6px; height: 6px; border-radius: 50%; background: #3ecf8e; animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+    .update-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #3e4660; }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 0 28px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #4a5272;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+
+    .tab:hover { color: #8890b0; }
+    .tab.active { color: #dde1f0; border-bottom-color: #4c8ef7; }
+
+    .panel { display: none; padding: 24px 28px 40px; }
+    .panel.active { display: block; }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .kpi {
+      background: #0d1225;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 16px 18px;
+    }
+
+    .kpi-label { font-size: 10px; color: #3e4660; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+    .kpi-val { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 500; color: #dde1f0; line-height: 1; }
+    .kpi-sub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4a5272; margin-top: 5px; }
+
+    .kpi-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin-top: 8px;
+    }
+
+    .up     { background: rgba(231,76,60,.1);   color: #e74c3c; }
+    .down   { background: rgba(62,207,142,.1);  color: #3ecf8e; }
+    .neutral{ background: rgba(76,142,247,.1);  color: #4c8ef7; }
+    .orange { background: rgba(230,168,50,.1);  color: #e6a832; }
+
+    .chart-wrap {
+      background: #0d1225;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chart-title { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6870a0; }
+    .chart-note  { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #2e3550; }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .leg { display: flex; align-items: center; gap: 5px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #4a5272; }
+    .leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    .tasas-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+    .tasas-table th { text-align: left; padding: 8px; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #2e3550; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .tasas-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #8890b0; }
+    .tasas-table td:last-child { text-align: right; color: #dde1f0; }
+
+    .info-box {
+      background: rgba(76,142,247,.05);
+      border: 1px solid rgba(76,142,247,.1);
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-size: 12px;
+      color: #4a5272;
+      line-height: 1.7;
+      margin-top: 12px;
+    }
+
+    .info-box a { color: #4c8ef7; text-decoration: none; }
+    .info-box a:hover { text-decoration: underline; }
+
+    .footer {
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding: 14px 28px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: #2e3550;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 14px 16px; }
+      .panel  { padding: 16px 16px 32px; }
+      .tabs   { padding: 0 16px; }
+      .kpi-val { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>Dashboard Económico · AR</h1>
+    <div class="live">
+      <div class="dot-live"></div>
+      <span>INDEC · BCRA · REM</span>
+    </div>
+  </div>
+  <div class="update-time" id="update-time">—</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('inflacion', this)">Inflación</div>
+  <div class="tab" onclick="showTab('rubros', this)">Por rubro</div>
+  <div class="tab" onclick="showTab('actividad', this)">Actividad</div>
+  <div class="tab" onclick="showTab('tasas', this)">Tasas BCRA</div>
+</div>
+
+<!-- ══════════════════════════ INFLACION ══════════════════════════ -->
+<div class="panel active" id="panel-inflacion">
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">IPC mensual</div>
+      <div class="kpi-val">3,4%</div>
+      <div class="kpi-sub">marzo 2026 — INDEC</div>
+      <span class="kpi-badge up">▲ vs feb 2,4%</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Acumulado 2026</div>
+      <div class="kpi-val">9,4%</div>
+      <div class="kpi-sub">enero–marzo 2026</div>
+      <span class="kpi-badge neutral">3 meses</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Interanual</div>
+      <div class="kpi-val">32,6%</div>
+      <div class="kpi-sub">mar 2025 → mar 2026</div>
+      <span class="kpi-badge down">↓ tendencia baja</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Proyección dic 2026</div>
+      <div class="kpi-val">29,1%</div>
+      <div class="kpi-sub">REM BCRA — anual</div>
+      <span class="kpi-badge orange">estimado</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title">IPC mensual — evolución 2025/2026 + proyección REM</div>
+      <div class="chart-note">INDEC · REM BCRA marzo 2026</div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="leg-sq" style="background:#4c8ef7;"></div>dato oficial INDEC</div>
+      <div class="leg"><div class="leg-sq" style="background:rgba(230,168,50,0.6);"></div>proyección REM BCRA</div>
+    </div>
+    <div style="position:relative;width:100%;height:280px;">
+      <canvas id="ipcChart" role="img" aria-label="IPC mensual Argentina 2025-2026 con proyección a diciembre">IPC mensual 2025-2026</canvas>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title">Inflación acumulada anual histórica</div>
+      <div class="chart-note">INDEC 2022–2026</div>
+    </div>
+    <div style="position:relative;width:100%;height:200px;">
+      <canvas id="acumChart" role="img" aria-label="Inflación anual acumulada Argentina 2022 a 2026">Inflación acumulada anual</canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ RUBROS ══════════════════════════ -->
+<div class="panel" id="panel-rubros">
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Mayor suba — mar 2026</div>
+      <div class="kpi-val" style="color:#e74c3c;">12,1%</div>
+      <div class="kpi-sub">Educación</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Menor suba — mar 2026</div>
+      <div class="kpi-val" style="color:#3ecf8e;">1,3%</div>
+      <div class="kpi-sub">Equipam. y hogar</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">IPC general</div>
+      <div class="kpi-val">3,4%</div>
+      <div class="kpi-sub">marzo 2026</div>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title">IPC por división — variación mensual marzo 2026</div>
+      <div class="chart-note">INDEC informe IPC marzo 2026</div>
+    </div>
+    <div style="position:relative;width:100%;height:340px;">
+      <canvas id="rubrosChart" role="img" aria-label="IPC por rubro marzo 2026 Argentina">IPC por rubro marzo 2026</canvas>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title">Evolución top rubros — últimos 12 meses</div>
+      <div class="chart-note">INDEC · valores aproximados por división</div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="leg-sq" style="background:#e74c3c;"></div>Educación</div>
+      <div class="leg"><div class="leg-sq" style="background:#4c8ef7;"></div>Alimentos</div>
+      <div class="leg"><div class="leg-sq" style="background:#e6a832;"></div>Transporte</div>
+      <div class="leg"><div class="leg-sq" style="background:#3ecf8e;"></div>Salud</div>
+    </div>
+    <div style="position:relative;width:100%;height:240px;">
+      <canvas id="rubrosEvolChart" role="img" aria-label="Evolución rubros últimos 12 meses">Evolución rubros</canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ ACTIVIDAD ══════════════════════════ -->
+<div class="panel" id="panel-actividad">
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">EMAE — índice</div>
+      <div class="kpi-val">179,3</div>
+      <div class="kpi-sub">enero 2026 · base 2004=100</div>
+      <span class="kpi-badge down">▲ +5,1% interanual</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">PIB real 2026</div>
+      <div class="kpi-val">+3,3%</div>
+      <div class="kpi-sub">variación anual proyectada</div>
+      <span class="kpi-badge neutral">REM BCRA</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Crecim. Trim I-26</div>
+      <div class="kpi-val">+1,3%</div>
+      <div class="kpi-sub">s.e. vs Trim IV-25</div>
+      <span class="kpi-badge neutral">REM</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title">EMAE — evolución mensual + proyección a diciembre 2026</div>
+      <div class="chart-note">INDEC base 2004=100 · proyección REM BCRA</div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="leg-sq" style="background:#3ecf8e;"></div>dato oficial INDEC</div>
+      <div class="leg"><div class="leg-sq" style="background:rgba(230,168,50,0.6);"></div>proyección REM</div>
+    </div>
+    <div style="position:relative;width:100%;height:260px;">
+      <canvas id="emaeChart" role="img" aria-label="EMAE evolución y proyección diciembre 2026">EMAE evolución y proyección</canvas>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong style="color:#6870a0;">Actividad por sector (VAB)</strong> — publicación mensual en PDF:<br>
+    <a href="https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-9-48" target="_blank">→ INDEC EMAE detalle sectorial</a><br><br>
+    <strong style="color:#6870a0;">Actividad QR / billeteras digitales</strong> — CAMAE no expone API pública. Datos disponibles en informes mensuales:<br>
+    <a href="https://www.bcra.gob.ar/Estadisticas/estadisticas_i.asp" target="_blank">→ BCRA Estadísticas de medios de pago</a>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ TASAS ══════════════════════════ -->
+<div class="panel" id="panel-tasas">
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">TAMAR actual (TNA)</div>
+      <div class="kpi-val">27,2%</div>
+      <div class="kpi-sub">abril 2026 estimado</div>
+      <span class="kpi-badge down">↓ desde 133% ene-24</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">TAMAR dic 2026</div>
+      <div class="kpi-val">23,4%</div>
+      <div class="kpi-sub">proyección REM BCRA</div>
+      <span class="kpi-badge orange">estimado</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">TC nominal dic 2026</div>
+      <div class="kpi-val">$1.700</div>
+      <div class="kpi-sub">mediana REM BCRA</div>
+      <span class="kpi-badge orange">estimado</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title">TAMAR TNA — evolución 2024/25/26 + proyección REM</div>
+      <div class="chart-note">BCRA · estadisticasbcra.com.ar · REM marzo 2026</div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="leg-sq" style="background:#f7b731;"></div>TAMAR TNA oficial</div>
+      <div class="leg"><div class="leg-sq" style="background:rgba(230,168,50,0.5);"></div>proyección REM</div>
+    </div>
+    <div style="position:relative;width:100%;height:240px;">
+      <canvas id="tamarChart" role="img" aria-label="Evolución TAMAR TNA Argentina 2024-2026 con proyección">TAMAR TNA</canvas>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title">Referencia tasas financieras — últimos meses</div>
+      <div class="chart-note">BCRA · datos aproximados</div>
+    </div>
+    <table class="tasas-table">
+      <thead>
+        <tr>
+          <th>Período</th>
+          <th>TAMAR TNA</th>
+          <th>TEM equiv.</th>
+          <th>Caución 1d aprox.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Ene 2026</td><td>32,0%</td><td>2,7%</td><td>~28%</td></tr>
+        <tr><td>Feb 2026</td><td>30,5%</td><td>2,5%</td><td>~26%</td></tr>
+        <tr><td>Mar 2026</td><td>28,8%</td><td>2,4%</td><td>~25%</td></tr>
+        <tr><td>Abr 2026 (est.)</td><td>27,2%</td><td>2,3%</td><td>~24%</td></tr>
+        <tr><td>Dic 2026 (proy.)</td><td>23,4%</td><td>1,9%</td><td>~20%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="info-box">
+    Para datos diarios en tiempo real de TAMAR y caución registrate gratis (5 min) en
+    <a href="https://estadisticasbcra.com" target="_blank">estadisticasbcra.com →</a>
+    y pasame el token para integrarlo al dashboard.
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>Fuentes: INDEC · BCRA · REM marzo 2026 · estadisticasbcra.com.ar</span>
+  <span id="footer-date">—</span>
+</div>
+
+<script>
+  // ── helpers ──────────────────────────────────────────────────
+  function showTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  const now = new Date();
+  const fmt = now.toLocaleString('es-AR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  document.getElementById('update-time').textContent = 'Actualizado: ' + fmt;
+  document.getElementById('footer-date').textContent = fmt;
+
+  // ── IPC MENSUAL ───────────────────────────────────────────────
+  const ipcLabels = [
+    'Ene 25','Feb','Mar','Abr','May','Jun',
+    'Jul','Ago','Sep','Oct','Nov','Dic 25',
+    'Ene 26','Feb','Mar','Abr*','May*','Jun*','Jul*','Ago*','Sep*','Oct*','Nov*','Dic*'
+  ];
+  const ipcOficial = [2.3,2.4,3.7,3.0,3.3,3.3,3.0,2.7,3.5,2.4,2.4,2.8, 2.3,2.4,3.4, null,null,null,null,null,null,null,null,null];
+  const ipcProyec  = [null,null,null,null,null,null,null,null,null,null,null,null, null,null,3.4, 2.9,2.6,2.4,2.2,2.0,1.9,1.8,1.7,1.6];
+
+  new Chart(document.getElementById('ipcChart'), {
+    type: 'bar',
+    data: {
+      labels: ipcLabels,
+      datasets: [
+        {
+          label: 'Oficial INDEC',
+          data: ipcOficial,
+          backgroundColor: ipcOficial.map((v,i) => i < 12 ? '#4c8ef7' : 'rgba(76,142,247,0.7)'),
+          borderRadius: 3,
+          order: 1
+        },
+        {
+          label: 'Proyección REM',
+          data: ipcProyec,
+          backgroundColor: 'rgba(230,168,50,0.3)',
+          borderColor: 'rgba(230,168,50,0.7)',
+          borderWidth: 1,
+          borderRadius: 3,
+          order: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y != null ? c.parsed.y.toFixed(1) + '%' : '—') }}},
+      scales: {
+        x: { ticks: { color: '#3e4660', font: { size: 10 }, autoSkip: false, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.03)' }},
+        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 5 }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('acumChart'), {
+    type: 'bar',
+    data: {
+      labels: ['2022', '2023', '2024', '2025', '2026 proy.'],
+      datasets: [{
+        label: 'Inflación anual',
+        data: [94.8, 211.4, 117.8, 31.5, 29.1],
+        backgroundColor: ['rgba(76,142,247,0.6)', '#e74c3c', '#e74c3c', 'rgba(76,142,247,0.8)', 'rgba(230,168,50,0.5)'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + '%' }}},
+      scales: {
+        x: { ticks: { color: '#3e4660', font: { size: 11 }}, grid: { display: false }},
+        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }}
+      }
+    }
+  });
+
+  // ── RUBROS ───────────────────────────────────────────────────
+  new Chart(document.getElementById('rubrosChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Educación','Transporte','Vivienda y serv.','Alimentos y beb.','Salud','Comunicación','Recreación y cultura','Ropa y calzado','Equipam. hogar'],
+      datasets: [{
+        label: 'Variación mensual mar 2026',
+        data: [12.1, 4.1, 3.8, 3.2, 3.0, 2.8, 2.4, 1.9, 1.3],
+        backgroundColor: ['#e74c3c','#e67e22','#e67e22','#4c8ef7','#4c8ef7','#3ecf8e','#3ecf8e','#3ecf8e','#3ecf8e'],
+        borderRadius: 3
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x + '%' }}},
+      scales: {
+        x: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 0, max: 14 },
+        y: { ticks: { color: '#8890b0', font: { size: 11 }}, grid: { display: false }}
+      }
+    }
+  });
+
+  const rubLabels = ['Abr 25','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic','Ene 26','Feb','Mar 26'];
+  new Chart(document.getElementById('rubrosEvolChart'), {
+    type: 'line',
+    data: {
+      labels: rubLabels,
+      datasets: [
+        { label: 'Educación', data: [3.5,2.1,2.5,2.2,2.0,3.8,2.3,2.0,0.4,8.5,5.0,12.1], borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 },
+        { label: 'Alimentos', data: [3.5,3.8,3.2,2.8,2.6,3.6,2.5,2.6,3.1,2.5,2.2,3.2], borderColor: '#4c8ef7', backgroundColor: 'rgba(76,142,247,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 },
+        { label: 'Transporte', data: [4.0,3.5,3.8,3.0,2.5,4.0,2.2,2.1,5.0,2.8,2.3,4.1], borderColor: '#e6a832', backgroundColor: 'rgba(230,168,50,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 },
+        { label: 'Salud', data: [3.2,3.5,3.8,3.2,2.8,3.5,2.4,2.6,2.5,2.8,2.5,3.0], borderColor: '#3ecf8e', backgroundColor: 'rgba(62,207,142,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' }}},
+      scales: {
+        x: { ticks: { color: '#3e4660', font: { size: 10 }, autoSkip: false, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.03)' }},
+        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }}
+      }
+    }
+  });
+
+  // ── EMAE ─────────────────────────────────────────────────────
+  const emaeLabels = ['Ene 25','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic 25','Ene 26','Feb*','Mar*','Abr*','May*','Jun*','Jul*','Ago*','Sep*','Oct*','Nov*','Dic*'];
+  const emaeOfic   = [168.5,170.2,173.1,172.8,174.0,174.5,175.8,176.2,177.0,177.8,178.5,179.0,179.3,null,null,null,null,null,null,null,null,null,null,null];
+  const emaeProy   = [null,null,null,null,null,null,null,null,null,null,null,null,179.3,180.0,180.8,181.5,182.3,183.0,183.8,184.5,185.2,186.0,186.8,187.5];
+
+  new Chart(document.getElementById('emaeChart'), {
+    type: 'line',
+    data: {
+      labels: emaeLabels,
+      datasets: [
+        { label: 'EMAE oficial', data: emaeOfic, borderColor: '#3ecf8e', backgroundColor: 'rgba(62,207,142,0.08)', tension: .3, pointRadius: 2, borderWidth: 2, fill: true, spanGaps: false },
+        { label: 'Proyección', data: emaeProy, borderColor: 'rgba(230,168,50,0.7)', backgroundColor: 'rgba(230,168,50,0.04)', tension: .3, pointRadius: 2, borderWidth: 2, borderDash: [5,4], fill: true, spanGaps: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y != null ? c.parsed.y.toFixed(1) : '—') }}},
+      scales: {
+        x: { ticks: { color: '#3e4660', font: { size: 10 }, autoSkip: true, maxTicksLimit: 12, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.03)' }},
+        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }}, grid: { color: 'rgba(255,255,255,0.04)' }, min: 160 }
+      }
+    }
+  });
+
+  // ── TAMAR ────────────────────────────────────────────────────
+  const tamarLabels = ['Ene 24','Abr','Jul','Oct','Ene 25','Abr','Jul','Oct','Ene 26','Feb','Mar','Abr*','Jul*','Oct*','Dic*'];
+  const tamarOfic   = [133, 97, 75, 58, 38, 36, 35, 34, 32, 30.5, 28.8, 27.2, null, null, null];
+  const tamarProy   = [null,null,null,null,null,null,null,null,null,null,null,27.2,25.0,23.8,23.4];
+
+  new Chart(document.getElementById('tamarChart'), {
+    type: 'line',
+    data: {
+      labels: tamarLabels,
+      datasets: [
+        { label: 'TAMAR TNA', data: tamarOfic, borderColor: '#f7b731', backgroundColor: 'rgba(247,183,49,0.07)', tension: .3, pointRadius: 3, borderWidth: 2, fill: true },
+        { label: 'Proyección REM', data: tamarProy, borderColor: 'rgba(230,168,50,0.6)', backgroundColor: 'rgba(230,168,50,0.04)', tension: .3, pointRadius: 3, borderWidth: 2, borderDash: [5,4], fill: true }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y != null ? c.parsed.y.toFixed(1) + '%' : '—') }}},
+      scales: {
+        x: { ticks: { color: '#3e4660', font: { size: 10 }}, grid: { color: 'rgba(255,255,255,0.03)' }},
+        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 0 }
+      }
+    }
+  });
+</script>
+</body>
+</html>
