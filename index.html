@@ -424,7 +424,7 @@
   <button class="tab" onclick="switchTab('actividad',this)">ACTIVIDAD</button>
   <button class="tab" onclick="switchTab('monetarias',this)">ESTADÍSTICAS MONETARIAS</button>
   <button class="tab" onclick="switchTab('cambiarias',this)">ESTADÍSTICAS CAMBIARIAS</button>
-  <button class="tab" onclick="switchTab('deudores',this)">CENTRAL DE DEUDORES</button>
+  <button class="tab" onclick="switchTab('morosidad',this)">MOROSIDAD SISTEMA FINANCIERO</button>
 </div>
 
 <main>
@@ -662,29 +662,84 @@
   </div>
 </div>
 
-<!-- ══════════════════ DEUDORES ══════════════════ -->
-<div class="panel" id="panel-deudores">
+<!-- ══════════════════ MOROSIDAD ══════════════════ -->
+<div class="panel" id="panel-morosidad">
   <div class="section-title">
-    Central de Deudores
-    <small>API BCRA v1.0 · CONSULTA POR CUIT/CUIL/CDI</small>
+    Morosidad del Sistema Financiero
+    <small>API BCRA v4.0 · ESTADÍSTICAS MONETARIAS · DATOS EN TIEMPO REAL</small>
   </div>
 
   <div class="info-box">
-    ℹ️ Este servicio permite consultar la situación crediticia de cualquier persona humana o jurídica en el sistema financiero argentino.<br>
-    Los datos corresponden al último período informado por las entidades al BCRA. No requiere autenticación.
+    ℹ️ Indicadores de morosidad, cartera irregular y cobertura con previsiones del sistema financiero argentino. Fuente: BCRA — Estadísticas Monetarias v4.0.
   </div>
 
-  <div class="search-box">
-    <input type="text" id="cuit-input" class="search-input" placeholder="Ingresá CUIT / CUIL / CDI (11 dígitos, sin guiones)" maxlength="13">
-    <button class="btn" onclick="buscarDeudor()">CONSULTAR</button>
-    <button class="btn secondary" onclick="buscarHistorico()">HISTÓRICO 24M</button>
+  <!-- KPIs morosidad -->
+  <div class="grid-4">
+    <div class="card accent2">
+      <div class="card-label">Irreg. Sector Privado</div>
+      <div class="card-value small loading-val" id="mor-irreg">cargando…</div>
+      <div class="card-sub" id="mor-irreg-fecha">–</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Préstamos Sector Privado</div>
+      <div class="card-value small loading-val" id="mor-prest">cargando…</div>
+      <div class="card-sub" id="mor-prest-fecha">–</div>
+    </div>
+    <div class="card accent3">
+      <div class="card-label">Depósitos Sector Privado</div>
+      <div class="card-value small loading-val" id="mor-dep">cargando…</div>
+      <div class="card-sub" id="mor-dep-fecha">–</div>
+    </div>
+    <div class="card accent4">
+      <div class="card-label">Previsiones s/ Cartera</div>
+      <div class="card-value small loading-val" id="mor-prev">cargando…</div>
+      <div class="card-sub" id="mor-prev-fecha">–</div>
+    </div>
   </div>
 
-  <div id="deudor-result"></div>
-  <div id="deudor-cheques"></div>
+  <!-- Selector morosidad -->
+  <div class="section-title" style="margin-top:8px">
+    Evolución de Indicadores de Cartera
+    <small>SELECCIONÁ UN INDICADOR</small>
+  </div>
+  <div class="var-selector" id="mor-selector">
+    <button class="var-chip active" onclick="selectMorVar(74,'Irregularidad Cartera Privada %',this)">Irregularidad Cartera Privada</button>
+    <button class="var-chip" onclick="selectMorVar(75,'Previsiones / Cartera Irregular %',this)">Cobertura con Previsiones</button>
+    <button class="var-chip" onclick="selectMorVar(32,'Préstamos Sector Privado',this)">Préstamos Sector Privado</button>
+    <button class="var-chip" onclick="selectMorVar(43,'Depósitos Totales en Pesos',this)">Depósitos en Pesos</button>
+    <button class="var-chip" onclick="selectMorVar(63,'Tasa Activa (Cartera Gral.)',this)">Tasa Activa</button>
+  </div>
 
-  <div class="info-box" style="margin-top:16px;background:rgba(255,107,53,.07);border-color:rgba(255,107,53,.2);color:var(--accent2)">
-    ⚖️ Los derechos de rectificación, actualización y supresión deben ejercerse ante la entidad cedente. Su difusión no implica conformidad por parte del BCRA.
+  <div class="chart-card">
+    <div class="chart-title" id="mor-chart-title">IRREGULARIDAD CARTERA PRIVADA % <span id="mor-chart-sub">últimos 365 días</span></div>
+    <div class="chart-wrap tall">
+      <canvas id="chartMorosidad"></canvas>
+    </div>
+  </div>
+
+  <!-- Tabla variables de crédito -->
+  <div class="section-title">
+    Variables de Crédito y Liquidez
+    <small>BCRA · INFORME MONETARIO DIARIO</small>
+  </div>
+  <div class="chart-card" style="padding:0;overflow:hidden">
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Categoría</th>
+            <th>Periodicidad</th>
+            <th class="num">Último Valor</th>
+            <th>Unidad</th>
+            <th>Última Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-morosidad">
+          <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);font-family:var(--mono);font-size:12px;">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -692,21 +747,40 @@
 
 <script>
 // ─────────────────────────────────────────────
-// BCRA PROXY — resuelve CORS via corsproxy
+// BCRA FETCH — múltiples estrategias anti-CORS
 // ─────────────────────────────────────────────
-const CORS = 'https://corsproxy.io/?';
+const PROXIES = [
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+];
 
 async function bcraGet(url) {
-  // Intentamos directo primero (funciona si el browser no bloquea)
+  // 1) Intento directo (puede funcionar en algunos browsers/entornos)
   try {
-    const r = await fetch(url, { headers: { 'Accept-Language': 'es-AR' } });
-    if (r.ok) return await r.json();
+    const r = await fetch(url, {
+      headers: { 'Accept-Language': 'es-AR', 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (r.ok) {
+      const data = await r.json();
+      if (data && data.status !== 500) return data;
+    }
   } catch(e) {}
-  // Fallback: proxy
-  try {
-    const r = await fetch(CORS + encodeURIComponent(url));
-    if (r.ok) return await r.json();
-  } catch(e) {}
+
+  // 2) Intentar cada proxy en orden
+  for (const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy(url), {
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!r.ok) continue;
+      const text = await r.text();
+      if (!text || text.trim() === '') continue;
+      const data = JSON.parse(text);
+      if (data && data.status !== 500) return data;
+    } catch(e) { continue; }
+  }
   return null;
 }
 
@@ -1147,179 +1221,159 @@ async function fetchUSDEvolution() {
 }
 
 // ─────────────────────────────────────────────
-// DEUDORES
+// MOROSIDAD — variables del BCRA
+// IDs relevantes (v4.0): ajustar según catálogo real
+// 74 = irregularidad cartera privada, 75 = previsiones/cartera irreg
+// 32 = préstamos sector privado, 43 = depósitos en pesos
+// 63 = tasa activa cartera general
 // ─────────────────────────────────────────────
-function limpiarCUIT(v) {
-  return v.replace(/[-\s]/g,'');
+let morChartInstance = null;
+
+// KPIs morosidad: usamos variables de crédito disponibles
+async function fetchMorosidadKPIs() {
+  const items = [
+    { id: 32, el: 'mor-prest', fecha: 'mor-prest-fecha', fmt: v => formatBillones(v) },
+    { id: 43, el: 'mor-dep',   fecha: 'mor-dep-fecha',   fmt: v => formatBillones(v) },
+    { id: 74, el: 'mor-irreg', fecha: 'mor-irreg-fecha', fmt: v => v.toFixed(2) + '%' },
+    { id: 75, el: 'mor-prev',  fecha: 'mor-prev-fecha',  fmt: v => v.toFixed(1) + '%' },
+  ];
+  const today = getDateStr(0);
+  const desde = getDateStr(-90);
+
+  for (const item of items) {
+    try {
+      const data = await bcraGet(`https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/${item.id}?desde=${desde}&hasta=${today}&limit=5`);
+      if (data && data.results && data.results.detalle && data.results.detalle.length > 0) {
+        const last = data.results.detalle[0];
+        const el = document.getElementById(item.el);
+        el.textContent = item.fmt(last.valor);
+        el.classList.remove('loading-val');
+        document.getElementById(item.fecha).textContent = formatFecha(last.fecha);
+      } else {
+        const el = document.getElementById(item.el);
+        el.textContent = 'Sin datos';
+        el.classList.remove('loading-val');
+      }
+    } catch(e) {
+      document.getElementById(item.el).textContent = 'Error';
+      document.getElementById(item.el).classList.remove('loading-val');
+    }
+  }
 }
 
-async function buscarDeudor() {
-  const raw = document.getElementById('cuit-input').value;
-  const cuit = limpiarCUIT(raw);
-  if (cuit.length !== 11) {
-    document.getElementById('deudor-result').innerHTML = '<div class="error-box">⚠ Ingresá exactamente 11 dígitos (sin guiones)</div>';
+async function selectMorVar(id, name, el) {
+  document.querySelectorAll('#mor-selector .var-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mor-chart-title').innerHTML = name.toUpperCase() + ' <span id="mor-chart-sub">últimos 365 días</span>';
+  await fetchMorChart(id, name);
+}
+
+async function fetchMorChart(id, name) {
+  const canvas = document.getElementById('chartMorosidad');
+  const ctx = canvas.getContext('2d');
+  if (morChartInstance) { morChartInstance.destroy(); morChartInstance = null; }
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#3d4558';
+  ctx.font = '12px IBM Plex Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('Cargando desde BCRA…', canvas.width/2, 80);
+
+  const today = getDateStr(0);
+  const desde = getDateStr(-365);
+  const data = await bcraGet(`https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/${id}?desde=${desde}&hasta=${today}&limit=1000`);
+
+  if (!data || !data.results || !data.results.detalle || data.results.detalle.length === 0) {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillText('No se pudo obtener datos del BCRA', canvas.width/2, 80);
     return;
   }
 
-  document.getElementById('deudor-result').innerHTML = '<div class="info-box">Consultando Central de Deudores del BCRA…</div>';
-  document.getElementById('deudor-cheques').innerHTML = '';
+  const detalle = [...data.results.detalle].reverse();
+  const labels = detalle.map(d => { const [y,m,dia] = d.fecha.split('-'); return `${dia}/${m}`; });
+  const values = detalle.map(d => d.valor);
 
-  const data = await bcraGet(`https://api.bcra.gob.ar/CentralDeDeudores/v1.0/Deudas/${cuit}`);
+  morChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: name,
+        data: values,
+        borderColor: '#ff6b35',
+        backgroundColor: 'rgba(255,107,53,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      ...chartOpts(),
+      plugins: { ...chartOpts().plugins, legend: { display: false } }
+    }
+  });
+}
 
-  if (!data) {
-    document.getElementById('deudor-result').innerHTML = '<div class="error-box">No se pudo conectar con la API del BCRA</div>';
+async function fetchTablaMorosidad() {
+  // Traer variables de crédito y liquidez (categoría Préstamos o similar)
+  const data = await bcraGet('https://api.bcra.gob.ar/estadisticas/v4.0/monetarias?limit=100');
+  const tbody = document.getElementById('tbody-morosidad');
+
+  if (!data || !data.results) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red);font-family:var(--mono)">No se pudo conectar con la API del BCRA</td></tr>';
     return;
   }
-  if (data.status === 404) {
-    document.getElementById('deudor-result').innerHTML = '<div class="error-box">No se encontraron datos para el CUIT/CUIL/CDI ingresado</div>';
-    return;
-  }
-  if (data.status === 400) {
-    document.getElementById('deudor-result').innerHTML = `<div class="error-box">${data.errorMessages ? data.errorMessages.join(', ') : 'Parámetro erróneo'}</div>`;
-    return;
-  }
 
-  const res = data.results;
-  if (!res) {
-    document.getElementById('deudor-result').innerHTML = '<div class="error-box">Respuesta inesperada del servidor</div>';
-    return;
-  }
+  // Filtrar variables relacionadas con crédito, morosidad, liquidez
+  const keywords = ['préstamo','depósito','irregular','morosidad','previsión','cartera','crédito','liquidez','tasa activa','tasa pasiva'];
+  const filtered = data.results.filter(r =>
+    r.descripcion && keywords.some(k => r.descripcion.toLowerCase().includes(k))
+  ).slice(0, 25);
 
-  const situacionColor = (s) => ['','badge-1','badge-2','badge-3','badge-4','badge-5'][s] || 'badge-5';
-  const situacionLabel = (s) => ['','Normal','Seg. Especial','Con Problemas','Alto Riesgo','Irrecuperable'][s] || `Sit. ${s}`;
-
-  let html = `
-    <div class="chart-card" style="margin-bottom:16px">
-      <div class="section-title" style="font-size:16px;margin-bottom:12px">
-        ${res.denominacion || '–'}
-        <small>CUIT/CUIL/CDI: ${cuit}</small>
-      </div>
-  `;
-
-  if (!res.periodos || res.periodos.length === 0) {
-    html += '<div style="color:var(--text-muted);font-family:var(--mono);font-size:12px;padding:12px">Sin deudas informadas en el sistema financiero</div>';
+  if (filtered.length === 0) {
+    // Si no hay filtrado, mostrar primeras 25
+    const rows = data.results.slice(0, 25);
+    tbody.innerHTML = rows.map(r => buildMorRow(r)).join('');
   } else {
-    for (const periodo of res.periodos) {
-      const [anio, mes] = [periodo.periodo.substring(0,4), periodo.periodo.substring(4,6)];
-      const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      html += `<div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-bottom:12px;letter-spacing:1px;text-transform:uppercase">Período: ${meses[parseInt(mes)]} ${anio}</div>`;
-      html += `<div style="overflow-x:auto"><table class="data-table" style="margin-bottom:20px">
-        <thead><tr>
-          <th>Entidad</th><th>Situación</th><th class="num">Monto (miles $)</th>
-          <th class="num">Días Atraso</th><th>Situación Jurídica</th><th>En Revisión</th>
-        </tr></thead><tbody>`;
-      for (const ent of periodo.entidades) {
-        html += `<tr>
-          <td>${ent.entidad}</td>
-          <td><span class="badge ${situacionColor(ent.situacion)}">${situacionLabel(ent.situacion)}</span></td>
-          <td class="num" style="color:var(--accent)">${ent.monto != null ? ent.monto.toLocaleString('es-AR') : '–'}</td>
-          <td class="num">${ent.diasAtrasoPago || 0}</td>
-          <td>${ent.situacionJuridica ? '<span style="color:var(--red)">Sí</span>' : '–'}</td>
-          <td>${ent.enRevision ? '<span style="color:var(--accent4)">Sí</span>' : '–'}</td>
-        </tr>`;
-      }
-      html += '</tbody></table></div>';
-    }
+    tbody.innerHTML = filtered.map(r => buildMorRow(r)).join('');
   }
-  html += '</div>';
-  document.getElementById('deudor-result').innerHTML = html;
-
-  // Cheques rechazados
-  fetchChequesRechazados(cuit);
 }
 
-async function fetchChequesRechazados(cuit) {
-  const data = await bcraGet(`https://api.bcra.gob.ar/CentralDeDeudores/v1.0/Deudas/ChequesRechazados/${cuit}`);
-  const el = document.getElementById('deudor-cheques');
-  if (!data || !data.results || !data.results.causales || data.results.causales.length === 0) {
-    el.innerHTML = '<div class="chart-card"><div style="font-family:var(--mono);font-size:12px;color:var(--text-muted)">✓ Sin cheques rechazados registrados</div></div>';
-    return;
-  }
-
-  let html = '<div class="chart-card"><div class="section-title" style="font-size:14px;margin-bottom:12px">CHEQUES RECHAZADOS</div>';
-  for (const causal of data.results.causales) {
-    html += `<div style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Causal: ${causal.causal}</div>`;
-    for (const ent of causal.entidades) {
-      html += `<div style="overflow-x:auto"><table class="data-table" style="margin-bottom:16px">
-        <thead><tr><th>Nro. Cheque</th><th>Fecha Rechazo</th><th class="num">Monto ($)</th><th>Estado Multa</th><th>Fecha Pago</th></tr></thead><tbody>`;
-      for (const ch of ent.detalle) {
-        html += `<tr>
-          <td>${ch.nroCheque}</td>
-          <td>${formatFecha(ch.fechaRechazo)}</td>
-          <td class="num" style="color:var(--accent2)">${ch.monto.toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
-          <td><span class="badge ${ch.estadoMulta === 'IMPAGA' ? 'badge-5' : 'badge-1'}">${ch.estadoMulta || '–'}</span></td>
-          <td>${ch.fechaPago ? formatFecha(ch.fechaPago) : '–'}</td>
-        </tr>`;
-      }
-      html += '</tbody></table></div>';
-    }
-  }
-  html += '</div>';
-  el.innerHTML = html;
-}
-
-async function buscarHistorico() {
-  const raw = document.getElementById('cuit-input').value;
-  const cuit = limpiarCUIT(raw);
-  if (cuit.length !== 11) {
-    document.getElementById('deudor-result').innerHTML = '<div class="error-box">⚠ Ingresá exactamente 11 dígitos</div>';
-    return;
-  }
-
-  document.getElementById('deudor-result').innerHTML = '<div class="info-box">Consultando histórico 24 meses…</div>';
-  const data = await bcraGet(`https://api.bcra.gob.ar/CentralDeDeudores/v1.0/Deudas/Historicas/${cuit}`);
-
-  if (!data || data.status === 404) {
-    document.getElementById('deudor-result').innerHTML = '<div class="error-box">No se encontraron datos históricos</div>';
-    return;
-  }
-
-  const res = data.results;
-  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const situacionColor = (s) => ['','badge-1','badge-2','badge-3','badge-4','badge-5'][s] || 'badge-5';
-  const situacionLabel = (s) => ['','Normal','Seg. Especial','Con Problemas','Alto Riesgo','Irrecuperable'][s] || `Sit. ${s}`;
-
-  let html = `<div class="chart-card">
-    <div class="section-title" style="font-size:16px;margin-bottom:12px">
-      ${res.denominacion || '–'} — Histórico 24 meses
-      <small>CUIT/CUIL/CDI: ${cuit}</small>
-    </div>
-    <div style="overflow-x:auto"><table class="data-table">
-      <thead><tr><th>Período</th><th>Entidad</th><th>Situación</th><th class="num">Monto (miles $)</th><th>En Revisión</th></tr></thead>
-      <tbody>`;
-
-  for (const p of (res.periodos || [])) {
-    const [anio, mes] = [p.periodo.substring(0,4), p.periodo.substring(4,6)];
-    for (const ent of p.entidades) {
-      html += `<tr>
-        <td style="white-space:nowrap">${meses[parseInt(mes)]} ${anio}</td>
-        <td>${ent.entidad}</td>
-        <td><span class="badge ${situacionColor(ent.situacion)}">${situacionLabel(ent.situacion)}</span></td>
-        <td class="num" style="color:var(--accent)">${ent.monto != null ? ent.monto.toLocaleString('es-AR') : '–'}</td>
-        <td>${ent.enRevision ? '<span style="color:var(--accent4)">Sí</span>' : '–'}</td>
-      </tr>`;
-    }
-  }
-  html += '</tbody></table></div></div>';
-  document.getElementById('deudor-result').innerHTML = html;
-  document.getElementById('deudor-cheques').innerHTML = '';
+function buildMorRow(r) {
+  return `<tr>
+    <td>${r.descripcion}</td>
+    <td style="color:var(--text-muted)">${r.categoria || '–'}</td>
+    <td style="text-align:center">
+      <span class="badge badge-${r.periodicidad === 'D' ? '1' : r.periodicidad === 'M' ? '3' : '2'}">
+        ${r.periodicidad === 'D' ? 'Diaria' : r.periodicidad === 'M' ? 'Mensual' : r.periodicidad || '–'}
+      </span>
+    </td>
+    <td class="num" style="color:var(--accent2)">${r.ultValorInformado != null ? r.ultValorInformado.toLocaleString('es-AR') : '–'}</td>
+    <td style="color:var(--text-muted);font-size:10px">${r.unidadExpresion || '–'}</td>
+    <td style="color:var(--text-dim)">${formatFecha(r.ultFechaInformada)}</td>
+  </tr>`;
 }
 
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 (async function init() {
-  // Iniciar fecha cambiaria con hoy
   document.getElementById('fecha-cambiaria').value = fechaHoy();
 
-  // Cargar monetarias en background
+  // Monetarias
   fetchMonetariasKPIs();
   fetchTablaMonetaria();
   fetchVarChart(1, 'Reservas Internacionales');
 
-  // Cargar cambiarias
+  // Cambiarias
   fetchCambiariasHoy();
   fetchUSDEvolution();
+
+  // Morosidad
+  fetchMorosidadKPIs();
+  fetchMorChart(74, 'Irregularidad Cartera Privada %');
+  fetchTablaMorosidad();
 
   updateTimestamp();
   setInterval(updateTimestamp, 60000);
