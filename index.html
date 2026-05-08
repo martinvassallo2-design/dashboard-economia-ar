@@ -1,588 +1,1329 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Económico · Argentina</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Económico · Argentina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2430;
+    --accent: #00e5a0;
+    --accent2: #ff6b35;
+    --accent3: #4d9fff;
+    --accent4: #ffcc00;
+    --text: #e8eaf0;
+    --text-dim: #7a8499;
+    --text-muted: #3d4558;
+    --red: #ff4d6d;
+    --green: #00e5a0;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --display: 'Bebas Neue', sans-serif;
+  }
 
-    body {
-      font-family: 'IBM Plex Sans', sans-serif;
-      background: #080c18;
-      color: #dde1f0;
-      min-height: 100vh;
-    }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .topbar {
-      padding: 18px 28px 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-      position: sticky;
-      top: 0;
-      background: #080c18;
-      z-index: 100;
-    }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+  }
 
-    .topbar-left { display: flex; align-items: center; gap: 14px; }
-    .topbar-left h1 { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #8890b0; }
+  /* ─── HEADER ─── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .logo span { color: var(--text-dim); }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:.4; transform:scale(1.3); }
+  }
+  .update-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
 
-    .live { display: flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4a5272; }
-    .dot-live { width: 6px; height: 6px; border-radius: 50%; background: #3ecf8e; animation: blink 2s infinite; }
-    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  /* ─── TABS ─── */
+  .tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0 24px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 14px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all .2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-    .update-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #3e4660; }
+  /* ─── MAIN ─── */
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
 
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      padding: 0 28px;
-      overflow-x: auto;
-    }
+  .panel { display: none; }
+  .panel.active { display: block; }
 
-    .tab {
-      padding: 12px 20px;
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      color: #4a5272;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all .2s;
-      white-space: nowrap;
-    }
+  /* ─── GRID ─── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+  @media(max-width:900px){ .grid-4{grid-template-columns:1fr 1fr;} .grid-3{grid-template-columns:1fr 1fr;} }
+  @media(max-width:600px){ .grid-4{grid-template-columns:1fr;} .grid-2{grid-template-columns:1fr;} .grid-3{grid-template-columns:1fr;} }
 
-    .tab:hover { color: #8890b0; }
-    .tab.active { color: #dde1f0; border-bottom-color: #4c8ef7; }
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:2px;
+    background: var(--accent);
+    opacity:.5;
+  }
+  .card.accent2::before { background: var(--accent2); }
+  .card.accent3::before { background: var(--accent3); }
+  .card.accent4::before { background: var(--accent4); }
 
-    .panel { display: none; padding: 24px 28px 40px; }
-    .panel.active { display: block; }
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .card-value {
+    font-family: var(--display);
+    font-size: 42px;
+    letter-spacing: 1px;
+    line-height: 1;
+    color: var(--text);
+  }
+  .card-value.small { font-size: 28px; }
+  .card-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+  .card-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-top: 8px;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .card-delta.up { color: var(--green); background: rgba(0,229,160,.1); }
+  .card-delta.down { color: var(--red); background: rgba(255,77,109,.1); }
 
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 10px;
-      margin-bottom: 24px;
-    }
+  .loading-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-muted);
+    animation: blink 1.2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    .kpi {
-      background: #0d1225;
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 8px;
-      padding: 16px 18px;
-    }
+  /* ─── CHART CONTAINERS ─── */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .chart-card.half { display: inline-block; width:calc(50% - 8px); }
+  .chart-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chart-title span { color: var(--text-muted); font-size: 10px; }
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-wrap.tall { height: 340px; }
 
-    .kpi-label { font-size: 10px; color: #3e4660; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
-    .kpi-val { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 500; color: #dde1f0; line-height: 1; }
-    .kpi-sub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4a5272; margin-top: 5px; }
+  /* ─── TABLE ─── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--text-muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(30,36,48,.6);
+    color: var(--text);
+  }
+  .data-table tr:hover td { background: rgba(255,255,255,.02); }
+  .data-table .num { text-align: right; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .badge-1 { background:rgba(0,229,160,.15); color:var(--green); }
+  .badge-2 { background:rgba(255,204,0,.15); color:var(--accent4); }
+  .badge-3 { background:rgba(77,159,255,.15); color:var(--accent3); }
+  .badge-4 { background:rgba(255,107,53,.15); color:var(--accent2); }
+  .badge-5 { background:rgba(255,77,109,.15); color:var(--red); }
 
-    .kpi-badge {
-      display: inline-block;
-      font-size: 10px;
-      font-family: 'IBM Plex Mono', monospace;
-      padding: 3px 8px;
-      border-radius: 3px;
-      margin-top: 8px;
-    }
+  /* ─── SEARCH ─── */
+  .search-box {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-muted); }
+  .btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: opacity .2s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: .85; }
+  .btn.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
 
-    .up     { background: rgba(231,76,60,.1);   color: #e74c3c; }
-    .down   { background: rgba(62,207,142,.1);  color: #3ecf8e; }
-    .neutral{ background: rgba(76,142,247,.1);  color: #4c8ef7; }
-    .orange { background: rgba(230,168,50,.1);  color: #e6a832; }
+  /* ─── CAMBIARIAS ─── */
+  .currency-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .currency-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .currency-code {
+    font-family: var(--display);
+    font-size: 28px;
+    color: var(--accent3);
+    letter-spacing: 2px;
+  }
+  .currency-name {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 4px 0 10px;
+  }
+  .currency-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--text);
+  }
+  .currency-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
 
-    .chart-wrap {
-      background: #0d1225;
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 16px;
-    }
+  /* ─── MONETARIAS SELECTOR ─── */
+  .var-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .var-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    background: transparent;
+    transition: all .2s;
+  }
+  .var-chip:hover { border-color: var(--accent3); color: var(--accent3); }
+  .var-chip.active { background: rgba(77,159,255,.15); border-color: var(--accent3); color: var(--accent3); }
 
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
+  /* ─── SECTION TITLE ─── */
+  .section-title {
+    font-family: var(--display);
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title small {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    font-weight: normal;
+    display: block;
+    margin-top: 2px;
+  }
 
-    .chart-title { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6870a0; }
-    .chart-note  { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #2e3550; }
+  /* ─── INFO BOX ─── */
+  .info-box {
+    background: rgba(77,159,255,.07);
+    border: 1px solid rgba(77,159,255,.2);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent3);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .error-box {
+    background: rgba(255,77,109,.07);
+    border: 1px solid rgba(255,77,109,.2);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--red);
+    margin: 12px 0;
+  }
 
-    .legend {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .leg { display: flex; align-items: center; gap: 5px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #4a5272; }
-    .leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-
-    .tasas-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
-    .tasas-table th { text-align: left; padding: 8px; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #2e3550; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .tasas-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #8890b0; }
-    .tasas-table td:last-child { text-align: right; color: #dde1f0; }
-
-    .info-box {
-      background: rgba(76,142,247,.05);
-      border: 1px solid rgba(76,142,247,.1);
-      border-radius: 6px;
-      padding: 14px 16px;
-      font-size: 12px;
-      color: #4a5272;
-      line-height: 1.7;
-      margin-top: 12px;
-    }
-
-    .info-box a { color: #4c8ef7; text-decoration: none; }
-    .info-box a:hover { text-decoration: underline; }
-
-    .footer {
-      border-top: 1px solid rgba(255,255,255,0.04);
-      padding: 14px 28px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px;
-      color: #2e3550;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    @media (max-width: 600px) {
-      .topbar { padding: 14px 16px; }
-      .panel  { padding: 16px 16px 32px; }
-      .tabs   { padding: 0 16px; }
-      .kpi-val { font-size: 22px; }
-    }
-  </style>
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="topbar-left">
-    <h1>Dashboard Económico · AR</h1>
-    <div class="live">
-      <div class="dot-live"></div>
-      <span>INDEC · BCRA · REM</span>
-    </div>
+<header>
+  <div class="logo">Dashboard <span>· AR</span></div>
+  <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);letter-spacing:1px;">INDEC · BCRA · REM</div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> LIVE BCRA</div>
+    <div class="update-time" id="update-time">–</div>
   </div>
-  <div class="update-time" id="update-time">—</div>
-</div>
+</header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('inflacion', this)">Inflación</div>
-  <div class="tab" onclick="showTab('rubros', this)">Por rubro</div>
-  <div class="tab" onclick="showTab('actividad', this)">Actividad</div>
-  <div class="tab" onclick="showTab('tasas', this)">Tasas BCRA</div>
+  <button class="tab active" onclick="switchTab('inflacion',this)">INFLACIÓN</button>
+  <button class="tab" onclick="switchTab('actividad',this)">ACTIVIDAD</button>
+  <button class="tab" onclick="switchTab('monetarias',this)">ESTADÍSTICAS MONETARIAS</button>
+  <button class="tab" onclick="switchTab('cambiarias',this)">ESTADÍSTICAS CAMBIARIAS</button>
+  <button class="tab" onclick="switchTab('deudores',this)">CENTRAL DE DEUDORES</button>
 </div>
 
-<!-- ══════════════════════════ INFLACION ══════════════════════════ -->
+<main>
+
+<!-- ══════════════════ INFLACIÓN ══════════════════ -->
 <div class="panel active" id="panel-inflacion">
-
-  <div class="kpi-row">
-    <div class="kpi">
-      <div class="kpi-label">IPC mensual</div>
-      <div class="kpi-val">3,4%</div>
-      <div class="kpi-sub">marzo 2026 — INDEC</div>
-      <span class="kpi-badge up">▲ vs feb 2,4%</span>
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-label">IPC Mensual</div>
+      <div class="card-value">3,4%</div>
+      <div class="card-sub">Marzo 2026 · INDEC</div>
+      <div class="card-delta up">▲ vs feb 2,4%</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Acumulado 2026</div>
-      <div class="kpi-val">9,4%</div>
-      <div class="kpi-sub">enero–marzo 2026</div>
-      <span class="kpi-badge neutral">3 meses</span>
+    <div class="card accent2">
+      <div class="card-label">Acumulado 2026</div>
+      <div class="card-value">9,4%</div>
+      <div class="card-sub">Enero – Marzo 2026</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Interanual</div>
-      <div class="kpi-val">32,6%</div>
-      <div class="kpi-sub">mar 2025 → mar 2026</div>
-      <span class="kpi-badge down">↓ tendencia baja</span>
+    <div class="card accent3">
+      <div class="card-label">Interanual</div>
+      <div class="card-value">32,6%</div>
+      <div class="card-sub">Mar 2025 → Mar 2026</div>
+      <div class="card-delta down">↓ tendencia baja</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Proyección dic 2026</div>
-      <div class="kpi-val">29,1%</div>
-      <div class="kpi-sub">REM BCRA — anual</div>
-      <span class="kpi-badge orange">estimado</span>
+    <div class="card accent4">
+      <div class="card-label">Proyección Dic 2026</div>
+      <div class="card-value">29,1%</div>
+      <div class="card-sub">REM BCRA · anual estimado</div>
     </div>
   </div>
 
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <div class="chart-title">IPC mensual — evolución 2025/2026 + proyección REM</div>
-      <div class="chart-note">INDEC · REM BCRA marzo 2026</div>
-    </div>
-    <div class="legend">
-      <div class="leg"><div class="leg-sq" style="background:#4c8ef7;"></div>dato oficial INDEC</div>
-      <div class="leg"><div class="leg-sq" style="background:rgba(230,168,50,0.6);"></div>proyección REM BCRA</div>
-    </div>
-    <div style="position:relative;width:100%;height:280px;">
-      <canvas id="ipcChart" role="img" aria-label="IPC mensual Argentina 2025-2026 con proyección a diciembre">IPC mensual 2025-2026</canvas>
+  <div class="chart-card">
+    <div class="chart-title">IPC MENSUAL — EVOLUCIÓN 2025/2026 + PROYECCIÓN REM <span>INDEC · REM BCRA mayo 2026</span></div>
+    <div class="chart-wrap">
+      <canvas id="chartIPC"></canvas>
     </div>
   </div>
 
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <div class="chart-title">Inflación acumulada anual histórica</div>
-      <div class="chart-note">INDEC 2022–2026</div>
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">IPC POR DIVISIÓN — VARIACIÓN MENSUAL MARZO 2026 <span>INDEC</span></div>
+      <div class="chart-wrap">
+        <canvas id="chartRubros"></canvas>
+      </div>
     </div>
-    <div style="position:relative;width:100%;height:200px;">
-      <canvas id="acumChart" role="img" aria-label="Inflación anual acumulada Argentina 2022 a 2026">Inflación acumulada anual</canvas>
+    <div class="chart-card">
+      <div class="chart-title">INFLACIÓN ACUMULADA ANUAL HISTÓRICA <span>INDEC 2018–2026</span></div>
+      <div class="chart-wrap">
+        <canvas id="chartAnual"></canvas>
+      </div>
     </div>
   </div>
 
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-label">Mayor suba — Mar 2026</div>
+      <div class="card-value small">12,1%</div>
+      <div class="card-sub">Educación</div>
+    </div>
+    <div class="card accent3">
+      <div class="card-label">IPC General</div>
+      <div class="card-value small">3,4%</div>
+      <div class="card-sub">Marzo 2026</div>
+    </div>
+    <div class="card accent2">
+      <div class="card-label">Menor suba — Mar 2026</div>
+      <div class="card-value small">1,3%</div>
+      <div class="card-sub">Equipam. y hogar</div>
+    </div>
+  </div>
 </div>
 
-<!-- ══════════════════════════ RUBROS ══════════════════════════ -->
-<div class="panel" id="panel-rubros">
-
-  <div class="kpi-row">
-    <div class="kpi">
-      <div class="kpi-label">Mayor suba — mar 2026</div>
-      <div class="kpi-val" style="color:#e74c3c;">12,1%</div>
-      <div class="kpi-sub">Educación</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Menor suba — mar 2026</div>
-      <div class="kpi-val" style="color:#3ecf8e;">1,3%</div>
-      <div class="kpi-sub">Equipam. y hogar</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">IPC general</div>
-      <div class="kpi-val">3,4%</div>
-      <div class="kpi-sub">marzo 2026</div>
-    </div>
-  </div>
-
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <div class="chart-title">IPC por división — variación mensual marzo 2026</div>
-      <div class="chart-note">INDEC informe IPC marzo 2026</div>
-    </div>
-    <div style="position:relative;width:100%;height:340px;">
-      <canvas id="rubrosChart" role="img" aria-label="IPC por rubro marzo 2026 Argentina">IPC por rubro marzo 2026</canvas>
-    </div>
-  </div>
-
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <div class="chart-title">Evolución top rubros — últimos 12 meses</div>
-      <div class="chart-note">INDEC · valores aproximados por división</div>
-    </div>
-    <div class="legend">
-      <div class="leg"><div class="leg-sq" style="background:#e74c3c;"></div>Educación</div>
-      <div class="leg"><div class="leg-sq" style="background:#4c8ef7;"></div>Alimentos</div>
-      <div class="leg"><div class="leg-sq" style="background:#e6a832;"></div>Transporte</div>
-      <div class="leg"><div class="leg-sq" style="background:#3ecf8e;"></div>Salud</div>
-    </div>
-    <div style="position:relative;width:100%;height:240px;">
-      <canvas id="rubrosEvolChart" role="img" aria-label="Evolución rubros últimos 12 meses">Evolución rubros</canvas>
-    </div>
-  </div>
-
-</div>
-
-<!-- ══════════════════════════ ACTIVIDAD ══════════════════════════ -->
+<!-- ══════════════════ ACTIVIDAD ══════════════════ -->
 <div class="panel" id="panel-actividad">
-
-  <div class="kpi-row">
-    <div class="kpi">
-      <div class="kpi-label">EMAE — índice</div>
-      <div class="kpi-val">179,3</div>
-      <div class="kpi-sub">enero 2026 · base 2004=100</div>
-      <span class="kpi-badge down">▲ +5,1% interanual</span>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-label">EMAE — Índice</div>
+      <div class="card-value">179,3</div>
+      <div class="card-sub">Enero 2026 · base 2004=100</div>
+      <div class="card-delta up">▲ +5,1% interanual</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">PIB real 2026</div>
-      <div class="kpi-val">+3,3%</div>
-      <div class="kpi-sub">variación anual proyectada</div>
-      <span class="kpi-badge neutral">REM BCRA</span>
+    <div class="card accent2">
+      <div class="card-label">PIB Real 2026</div>
+      <div class="card-value">+3,3%</div>
+      <div class="card-sub">Variación anual proyectada · REM BCRA</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Crecim. Trim I-26</div>
-      <div class="kpi-val">+1,3%</div>
-      <div class="kpi-sub">s.e. vs Trim IV-25</div>
-      <span class="kpi-badge neutral">REM</span>
+    <div class="card accent4">
+      <div class="card-label">Crec. Trim I-26</div>
+      <div class="card-value">+1,3%</div>
+      <div class="card-sub">s.e. vs Trim IV-25 · REM</div>
     </div>
   </div>
 
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <div class="chart-title">EMAE — evolución mensual + proyección a diciembre 2026</div>
-      <div class="chart-note">INDEC base 2004=100 · proyección REM BCRA</div>
-    </div>
-    <div class="legend">
-      <div class="leg"><div class="leg-sq" style="background:#3ecf8e;"></div>dato oficial INDEC</div>
-      <div class="leg"><div class="leg-sq" style="background:rgba(230,168,50,0.6);"></div>proyección REM</div>
-    </div>
-    <div style="position:relative;width:100%;height:260px;">
-      <canvas id="emaeChart" role="img" aria-label="EMAE evolución y proyección diciembre 2026">EMAE evolución y proyección</canvas>
+  <div class="chart-card">
+    <div class="chart-title">EMAE — EVOLUCIÓN MENSUAL + PROYECCIÓN A DICIEMBRE 2026 <span>INDEC base 2004=100 · REM BCRA</span></div>
+    <div class="chart-wrap tall">
+      <canvas id="chartEMAE"></canvas>
     </div>
   </div>
 
   <div class="info-box">
-    <strong style="color:#6870a0;">Actividad por sector (VAB)</strong> — publicación mensual en PDF:<br>
-    <a href="https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-9-48" target="_blank">→ INDEC EMAE detalle sectorial</a><br><br>
-    <strong style="color:#6870a0;">Actividad QR / billeteras digitales</strong> — CAMAE no expone API pública. Datos disponibles en informes mensuales:<br>
-    <a href="https://www.bcra.gob.ar/Estadisticas/estadisticas_i.asp" target="_blank">→ BCRA Estadísticas de medios de pago</a>
+    📊 Actividad por sector (VAB): publicación mensual en PDF en INDEC EMAE detalle sectorial<br>
+    📱 Actividad QR / billeteras digitales: datos disponibles en BCRA Estadísticas de medios de pago
   </div>
-
 </div>
 
-<!-- ══════════════════════════ TASAS ══════════════════════════ -->
-<div class="panel" id="panel-tasas">
+<!-- ══════════════════ MONETARIAS ══════════════════ -->
+<div class="panel" id="panel-monetarias">
+  <div class="section-title">
+    Estadísticas Monetarias
+    <small>API BCRA v4.0 · DATOS EN TIEMPO REAL</small>
+  </div>
 
-  <div class="kpi-row">
-    <div class="kpi">
-      <div class="kpi-label">TAMAR actual (TNA)</div>
-      <div class="kpi-val">27,2%</div>
-      <div class="kpi-sub">abril 2026 estimado</div>
-      <span class="kpi-badge down">↓ desde 133% ene-24</span>
+  <!-- KPIs en vivo -->
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-label">Reservas Internacionales</div>
+      <div class="card-value small loading-val" id="mon-reservas">cargando…</div>
+      <div class="card-sub" id="mon-reservas-fecha">–</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">TAMAR dic 2026</div>
-      <div class="kpi-val">23,4%</div>
-      <div class="kpi-sub">proyección REM BCRA</div>
-      <span class="kpi-badge orange">estimado</span>
+    <div class="card accent3">
+      <div class="card-label">Tipo de Cambio Ref. (BNA)</div>
+      <div class="card-value small loading-val" id="mon-tc">cargando…</div>
+      <div class="card-sub" id="mon-tc-fecha">–</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">TC nominal dic 2026</div>
-      <div class="kpi-val">$1.700</div>
-      <div class="kpi-sub">mediana REM BCRA</div>
-      <span class="kpi-badge orange">estimado</span>
+    <div class="card accent2">
+      <div class="card-label">Base Monetaria</div>
+      <div class="card-value small loading-val" id="mon-bm">cargando…</div>
+      <div class="card-sub" id="mon-bm-fecha">–</div>
+    </div>
+    <div class="card accent4">
+      <div class="card-label">LELIQ / REPO BCRA</div>
+      <div class="card-value small loading-val" id="mon-pases">cargando…</div>
+      <div class="card-sub" id="mon-pases-fecha">–</div>
     </div>
   </div>
 
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <div class="chart-title">TAMAR TNA — evolución 2024/25/26 + proyección REM</div>
-      <div class="chart-note">BCRA · estadisticasbcra.com.ar · REM marzo 2026</div>
-    </div>
-    <div class="legend">
-      <div class="leg"><div class="leg-sq" style="background:#f7b731;"></div>TAMAR TNA oficial</div>
-      <div class="leg"><div class="leg-sq" style="background:rgba(230,168,50,0.5);"></div>proyección REM</div>
-    </div>
-    <div style="position:relative;width:100%;height:240px;">
-      <canvas id="tamarChart" role="img" aria-label="Evolución TAMAR TNA Argentina 2024-2026 con proyección">TAMAR TNA</canvas>
+  <!-- Selector de variable -->
+  <div class="section-title" style="margin-top:8px">
+    Explorador de Variables
+    <small>SELECCIONÁ UNA VARIABLE PARA VER SU EVOLUCIÓN</small>
+  </div>
+
+  <div class="var-selector" id="var-selector">
+    <button class="var-chip active" onclick="selectVar(1,'Reservas Internacionales',this)" data-id="1">Reservas Internacionales</button>
+    <button class="var-chip" onclick="selectVar(4,'Tipo de Cambio BNA',this)" data-id="4">Tipo de Cambio BNA</button>
+    <button class="var-chip" onclick="selectVar(15,'Base Monetaria',this)" data-id="15">Base Monetaria</button>
+    <button class="var-chip" onclick="selectVar(40,'Depósitos Vista',this)" data-id="40">Depósitos Vista</button>
+    <button class="var-chip" onclick="selectVar(6,'Circulación Monetaria',this)" data-id="6">Circulación Monetaria</button>
+    <button class="var-chip" onclick="selectVar(27,'Tasas de Pases',this)" data-id="27">Tasas de Pases</button>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title" id="mon-chart-title">RESERVAS INTERNACIONALES <span id="mon-chart-sub">últimos 180 días</span></div>
+    <div class="chart-wrap tall">
+      <canvas id="chartMonetaria"></canvas>
     </div>
   </div>
 
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <div class="chart-title">Referencia tasas financieras — últimos meses</div>
-      <div class="chart-note">BCRA · datos aproximados</div>
+  <!-- Tabla de principales variables -->
+  <div class="section-title">
+    Principales Variables
+    <small>BCRA · INFORME MONETARIO</small>
+  </div>
+  <div class="chart-card" style="padding:0;overflow:hidden">
+    <div style="overflow-x:auto">
+      <table class="data-table" id="tabla-monetaria">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Categoría</th>
+            <th>Periodicidad</th>
+            <th class="num">Último Valor</th>
+            <th>Unidad</th>
+            <th>Última Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-monetaria">
+          <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);font-family:var(--mono);font-size:12px;">Cargando datos del BCRA…</td></tr>
+        </tbody>
+      </table>
     </div>
-    <table class="tasas-table">
-      <thead>
-        <tr>
-          <th>Período</th>
-          <th>TAMAR TNA</th>
-          <th>TEM equiv.</th>
-          <th>Caución 1d aprox.</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Ene 2026</td><td>32,0%</td><td>2,7%</td><td>~28%</td></tr>
-        <tr><td>Feb 2026</td><td>30,5%</td><td>2,5%</td><td>~26%</td></tr>
-        <tr><td>Mar 2026</td><td>28,8%</td><td>2,4%</td><td>~25%</td></tr>
-        <tr><td>Abr 2026 (est.)</td><td>27,2%</td><td>2,3%</td><td>~24%</td></tr>
-        <tr><td>Dic 2026 (proy.)</td><td>23,4%</td><td>1,9%</td><td>~20%</td></tr>
-      </tbody>
-    </table>
+  </div>
+</div>
+
+<!-- ══════════════════ CAMBIARIAS ══════════════════ -->
+<div class="panel" id="panel-cambiarias">
+  <div class="section-title">
+    Estadísticas Cambiarias
+    <small>API BCRA v1.0 · COTIZACIONES OFICIALES</small>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+    <input type="date" id="fecha-cambiaria" class="search-input" style="max-width:200px">
+    <button class="btn" onclick="fetchCambiarias()">CONSULTAR</button>
+    <button class="btn secondary" onclick="fetchCambiariasHoy()">HOY</button>
+    <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted)" id="camb-status">–</span>
+  </div>
+
+  <!-- Destacadas -->
+  <div class="section-title" style="font-size:14px;margin-bottom:12px">PRINCIPALES DIVISAS</div>
+  <div class="currency-grid" id="currency-highlights">
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);padding:20px">Cargando…</div>
+  </div>
+
+  <!-- Evolución USD -->
+  <div class="chart-card">
+    <div class="chart-title">EVOLUCIÓN USD/ARS — ÚLTIMOS 90 DÍAS <span>BCRA Oficial</span></div>
+    <div class="chart-wrap">
+      <canvas id="chartUSD"></canvas>
+    </div>
+  </div>
+
+  <!-- Tabla completa -->
+  <div class="section-title" style="margin-top:8px">
+    Cotizaciones Completas
+    <small id="camb-fecha-tabla">–</small>
+  </div>
+  <div class="chart-card" style="padding:0;overflow:hidden">
+    <div style="overflow-x:auto;max-height:400px">
+      <table class="data-table" id="tabla-cambiaria">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Moneda</th>
+            <th class="num">Tipo Pase</th>
+            <th class="num">Cotización ($/u)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-cambiaria">
+          <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);font-family:var(--mono)">Seleccioná una fecha y consultá</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ DEUDORES ══════════════════ -->
+<div class="panel" id="panel-deudores">
+  <div class="section-title">
+    Central de Deudores
+    <small>API BCRA v1.0 · CONSULTA POR CUIT/CUIL/CDI</small>
   </div>
 
   <div class="info-box">
-    Para datos diarios en tiempo real de TAMAR y caución registrate gratis (5 min) en
-    <a href="https://estadisticasbcra.com" target="_blank">estadisticasbcra.com →</a>
-    y pasame el token para integrarlo al dashboard.
+    ℹ️ Este servicio permite consultar la situación crediticia de cualquier persona humana o jurídica en el sistema financiero argentino.<br>
+    Los datos corresponden al último período informado por las entidades al BCRA. No requiere autenticación.
   </div>
 
+  <div class="search-box">
+    <input type="text" id="cuit-input" class="search-input" placeholder="Ingresá CUIT / CUIL / CDI (11 dígitos, sin guiones)" maxlength="13">
+    <button class="btn" onclick="buscarDeudor()">CONSULTAR</button>
+    <button class="btn secondary" onclick="buscarHistorico()">HISTÓRICO 24M</button>
+  </div>
+
+  <div id="deudor-result"></div>
+  <div id="deudor-cheques"></div>
+
+  <div class="info-box" style="margin-top:16px;background:rgba(255,107,53,.07);border-color:rgba(255,107,53,.2);color:var(--accent2)">
+    ⚖️ Los derechos de rectificación, actualización y supresión deben ejercerse ante la entidad cedente. Su difusión no implica conformidad por parte del BCRA.
+  </div>
 </div>
 
-<div class="footer">
-  <span>Fuentes: INDEC · BCRA · REM marzo 2026 · estadisticasbcra.com.ar</span>
-  <span id="footer-date">—</span>
-</div>
+</main>
 
 <script>
-  // ── helpers ──────────────────────────────────────────────────
-  function showTab(name, el) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('panel-' + name).classList.add('active');
-  }
+// ─────────────────────────────────────────────
+// BCRA PROXY — resuelve CORS via corsproxy
+// ─────────────────────────────────────────────
+const CORS = 'https://corsproxy.io/?';
 
+async function bcraGet(url) {
+  // Intentamos directo primero (funciona si el browser no bloquea)
+  try {
+    const r = await fetch(url, { headers: { 'Accept-Language': 'es-AR' } });
+    if (r.ok) return await r.json();
+  } catch(e) {}
+  // Fallback: proxy
+  try {
+    const r = await fetch(CORS + encodeURIComponent(url));
+    if (r.ok) return await r.json();
+  } catch(e) {}
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+// TIMESTAMP
+// ─────────────────────────────────────────────
+function updateTimestamp() {
   const now = new Date();
-  const fmt = now.toLocaleString('es-AR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-  document.getElementById('update-time').textContent = 'Actualizado: ' + fmt;
-  document.getElementById('footer-date').textContent = fmt;
+  document.getElementById('update-time').textContent =
+    'ACT. ' + now.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+}
+updateTimestamp();
 
-  // ── IPC MENSUAL ───────────────────────────────────────────────
-  const ipcLabels = [
-    'Ene 25','Feb','Mar','Abr','May','Jun',
-    'Jul','Ago','Sep','Oct','Nov','Dic 25',
-    'Ene 26','Feb','Mar','Abr*','May*','Jun*','Jul*','Ago*','Sep*','Oct*','Nov*','Dic*'
-  ];
-  const ipcOficial = [2.3,2.4,3.7,3.0,3.3,3.3,3.0,2.7,3.5,2.4,2.4,2.8, 2.3,2.4,3.4, null,null,null,null,null,null,null,null,null];
-  const ipcProyec  = [null,null,null,null,null,null,null,null,null,null,null,null, null,null,3.4, 2.9,2.6,2.4,2.2,2.0,1.9,1.8,1.7,1.6];
+// ─────────────────────────────────────────────
+// CHART DEFAULTS
+// ─────────────────────────────────────────────
+Chart.defaults.color = '#7a8499';
+Chart.defaults.borderColor = '#1e2430';
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
 
-  new Chart(document.getElementById('ipcChart'), {
+function chartOpts(extra={}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, labels: { color:'#7a8499', boxWidth:12, padding:16 } },
+      tooltip: {
+        backgroundColor: '#111318',
+        borderColor: '#1e2430',
+        borderWidth: 1,
+        titleColor: '#e8eaf0',
+        bodyColor: '#7a8499',
+        padding: 10
+      }
+    },
+    scales: {
+      x: { grid: { color: '#1e2430' }, ticks: { maxRotation: 45 } },
+      y: { grid: { color: '#1e2430' } }
+    },
+    ...extra
+  };
+}
+
+// ─────────────────────────────────────────────
+// INFLACIÓN — gráficos estáticos actualizados
+// ─────────────────────────────────────────────
+(function() {
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // IPC mensual 2025 + 2026 + proyección
+  const labels2025 = meses.map(m=>m+' 25');
+  const labels2026 = ['Ene 26','Feb 26','Mar 26','Abr 26(p)','May 26(p)','Jun 26(p)','Jul 26(p)','Ago 26(p)','Sep 26(p)','Oct 26(p)','Nov 26(p)','Dic 26(p)'];
+  const data2025 = [2.9,2.4,3.7,3.3,3.3,3.2,2.7,4.2,3.5,2.4,2.4,2.7];
+  const data2026real = [2.3,2.4,3.4,null,null,null,null,null,null,null,null,null];
+  const data2026proy = [null,null,null,2.8,2.7,2.5,2.5,2.4,2.4,2.3,2.3,2.2];
+
+  new Chart(document.getElementById('chartIPC'), {
     type: 'bar',
     data: {
-      labels: ipcLabels,
+      labels: [...labels2025, ...labels2026],
       datasets: [
         {
-          label: 'Oficial INDEC',
-          data: ipcOficial,
-          backgroundColor: ipcOficial.map((v,i) => i < 12 ? '#4c8ef7' : 'rgba(76,142,247,0.7)'),
-          borderRadius: 3,
-          order: 1
+          label: '2025 (INDEC)',
+          data: [...data2025, ...new Array(12).fill(null)],
+          backgroundColor: 'rgba(77,159,255,0.5)',
+          borderColor: 'rgba(77,159,255,0.8)',
+          borderWidth: 1,
+          borderRadius: 3
         },
         {
-          label: 'Proyección REM',
-          data: ipcProyec,
-          backgroundColor: 'rgba(230,168,50,0.3)',
-          borderColor: 'rgba(230,168,50,0.7)',
+          label: '2026 Oficial (INDEC)',
+          data: [...new Array(12).fill(null), ...data2026real],
+          backgroundColor: 'rgba(0,229,160,0.6)',
+          borderColor: 'rgba(0,229,160,0.9)',
+          borderWidth: 1,
+          borderRadius: 3
+        },
+        {
+          label: '2026 Proyección REM',
+          data: [...new Array(12).fill(null), ...data2026proy],
+          backgroundColor: 'rgba(255,204,0,0.3)',
+          borderColor: 'rgba(255,204,0,0.7)',
           borderWidth: 1,
           borderRadius: 3,
-          order: 2
+          borderDash: [4,4]
         }
       ]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y != null ? c.parsed.y.toFixed(1) + '%' : '—') }}},
-      scales: {
-        x: { ticks: { color: '#3e4660', font: { size: 10 }, autoSkip: false, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.03)' }},
-        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 5 }
-      }
-    }
+    options: chartOpts()
   });
 
-  new Chart(document.getElementById('acumChart'), {
+  // Rubros
+  new Chart(document.getElementById('chartRubros'), {
     type: 'bar',
     data: {
-      labels: ['2022', '2023', '2024', '2025', '2026 proy.'],
+      labels: ['Educación','Salud','Comunic.','Rest./Hotel.','Transp.','Alim./Beb.','Vivienda','IPC Gral','Ropa','Equipam.'],
       datasets: [{
-        label: 'Inflación anual',
-        data: [94.8, 211.4, 117.8, 31.5, 29.1],
-        backgroundColor: ['rgba(76,142,247,0.6)', '#e74c3c', '#e74c3c', 'rgba(76,142,247,0.8)', 'rgba(230,168,50,0.5)'],
-        borderRadius: 4
+        label: 'Var. % mensual',
+        data: [12.1,5.2,4.8,4.1,3.8,3.4,2.9,3.4,2.1,1.3],
+        backgroundColor: data => {
+          const v = [12.1,5.2,4.8,4.1,3.8,3.4,2.9,3.4,2.1,1.3][data.dataIndex];
+          return v > 3.4 ? 'rgba(255,77,109,0.6)' : v === 3.4 ? 'rgba(255,204,0,0.6)' : 'rgba(0,229,160,0.5)';
+        },
+        borderRadius: 3,
+        borderWidth: 0
       }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + '%' }}},
-      scales: {
-        x: { ticks: { color: '#3e4660', font: { size: 11 }}, grid: { display: false }},
-        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }}
-      }
+      ...chartOpts(),
+      indexAxis: 'y',
+      plugins: { ...chartOpts().plugins, legend:{display:false} }
     }
   });
 
-  // ── RUBROS ───────────────────────────────────────────────────
-  new Chart(document.getElementById('rubrosChart'), {
+  // Histórico anual
+  new Chart(document.getElementById('chartAnual'), {
     type: 'bar',
     data: {
-      labels: ['Educación','Transporte','Vivienda y serv.','Alimentos y beb.','Salud','Comunicación','Recreación y cultura','Ropa y calzado','Equipam. hogar'],
+      labels: ['2018','2019','2020','2021','2022','2023','2024','2025','2026(p)'],
       datasets: [{
-        label: 'Variación mensual mar 2026',
-        data: [12.1, 4.1, 3.8, 3.2, 3.0, 2.8, 2.4, 1.9, 1.3],
-        backgroundColor: ['#e74c3c','#e67e22','#e67e22','#4c8ef7','#4c8ef7','#3ecf8e','#3ecf8e','#3ecf8e','#3ecf8e'],
+        label: 'Inflación anual %',
+        data: [47.6,53.8,36.1,50.9,94.8,211.4,117.8,52.0,29.1],
+        backgroundColor: [
+          '#4d9fff88','#4d9fff88','#4d9fff88','#4d9fff88',
+          '#ff6b3588','#ff4d6d88','#ff4d6d88',
+          '#ffcc0088','rgba(255,204,0,0.3)'
+        ],
+        borderColor: ['#4d9fff','#4d9fff','#4d9fff','#4d9fff','#ff6b35','#ff4d6d','#ff4d6d','#ffcc00','rgba(255,204,0,0.5)'],
+        borderWidth: 1,
         borderRadius: 3
       }]
     },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x + '%' }}},
-      scales: {
-        x: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 0, max: 14 },
-        y: { ticks: { color: '#8890b0', font: { size: 11 }}, grid: { display: false }}
-      }
-    }
+    options: chartOpts({ plugins:{...chartOpts().plugins, legend:{display:false}} })
   });
+})();
 
-  const rubLabels = ['Abr 25','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic','Ene 26','Feb','Mar 26'];
-  new Chart(document.getElementById('rubrosEvolChart'), {
+// ─────────────────────────────────────────────
+// ACTIVIDAD — EMAE
+// ─────────────────────────────────────────────
+(function() {
+  const labels = ['Ene 24','Mar 24','May 24','Jul 24','Sep 24','Nov 24','Ene 25','Mar 25','May 25','Jul 25','Sep 25','Nov 25','Ene 26'];
+  const vals =   [164.2,  161.8,  163.5,  166.1,  168.4,  167.2,  169.8,  172.1,  174.3,  175.8,  177.2,  178.1,  179.3];
+  const proy =   [null,null,null,null,null,null,null,null,null,null,null,null,179.3,180.8,182.1,183.5,184.9,186.2,187.4,188.7,189.9,191.1,192.3,193.5,194.8];
+  const labProy = [...labels,'Mar 26(p)','Abr 26(p)','May 26(p)','Jun 26(p)','Jul 26(p)','Ago 26(p)','Sep 26(p)','Oct 26(p)','Nov 26(p)','Dic 26(p)'];
+  const dataOficial = [...vals, ...new Array(12).fill(null)];
+  const dataProyeccion = [...new Array(12).fill(null), ...proy];
+
+  new Chart(document.getElementById('chartEMAE'), {
     type: 'line',
     data: {
-      labels: rubLabels,
+      labels: labProy,
       datasets: [
-        { label: 'Educación', data: [3.5,2.1,2.5,2.2,2.0,3.8,2.3,2.0,0.4,8.5,5.0,12.1], borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 },
-        { label: 'Alimentos', data: [3.5,3.8,3.2,2.8,2.6,3.6,2.5,2.6,3.1,2.5,2.2,3.2], borderColor: '#4c8ef7', backgroundColor: 'rgba(76,142,247,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 },
-        { label: 'Transporte', data: [4.0,3.5,3.8,3.0,2.5,4.0,2.2,2.1,5.0,2.8,2.3,4.1], borderColor: '#e6a832', backgroundColor: 'rgba(230,168,50,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 },
-        { label: 'Salud', data: [3.2,3.5,3.8,3.2,2.8,3.5,2.4,2.6,2.5,2.8,2.5,3.0], borderColor: '#3ecf8e', backgroundColor: 'rgba(62,207,142,0.05)', tension: .3, pointRadius: 3, borderWidth: 2 }
+        {
+          label: 'EMAE Oficial',
+          data: dataOficial,
+          borderColor: '#00e5a0',
+          backgroundColor: 'rgba(0,229,160,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3
+        },
+        {
+          label: 'Proyección REM',
+          data: dataProyeccion,
+          borderColor: '#ffcc00',
+          backgroundColor: 'rgba(255,204,0,0.05)',
+          fill: true,
+          tension: 0.4,
+          borderDash: [6,4],
+          pointRadius: 2
+        }
       ]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' }}},
-      scales: {
-        x: { ticks: { color: '#3e4660', font: { size: 10 }, autoSkip: false, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.03)' }},
-        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }}
-      }
-    }
+    options: chartOpts()
   });
+})();
 
-  // ── EMAE ─────────────────────────────────────────────────────
-  const emaeLabels = ['Ene 25','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic 25','Ene 26','Feb*','Mar*','Abr*','May*','Jun*','Jul*','Ago*','Sep*','Oct*','Nov*','Dic*'];
-  const emaeOfic   = [168.5,170.2,173.1,172.8,174.0,174.5,175.8,176.2,177.0,177.8,178.5,179.0,179.3,null,null,null,null,null,null,null,null,null,null,null];
-  const emaeProy   = [null,null,null,null,null,null,null,null,null,null,null,null,179.3,180.0,180.8,181.5,182.3,183.0,183.8,184.5,185.2,186.0,186.8,187.5];
+// ─────────────────────────────────────────────
+// MONETARIAS — APIs en vivo
+// ─────────────────────────────────────────────
+let monChartInstance = null;
+let currentVarId = 1;
 
-  new Chart(document.getElementById('emaeChart'), {
+async function fetchMonetariasKPIs() {
+  // Variables: 1=Reservas, 4=TC BNA compra, 15=Base Monetaria, 27=Pases Pasivos
+  const ids = [
+    { id: 1, elVal: 'mon-reservas', elFecha: 'mon-reservas-fecha', fmt: v => (v/1000).toFixed(1) + ' mil MM USD', unit: 'MM USD' },
+    { id: 4, elVal: 'mon-tc', elFecha: 'mon-tc-fecha', fmt: v => '$ ' + v.toLocaleString('es-AR',{minimumFractionDigits:2}), unit: 'ARS/USD' },
+    { id: 15, elVal: 'mon-bm', elFecha: 'mon-bm-fecha', fmt: v => formatBillones(v), unit: 'Mill. $' },
+    { id: 27, elVal: 'mon-pases', elFecha: 'mon-pases-fecha', fmt: v => v.toFixed(2) + '%', unit: 'TNA %' },
+  ];
+
+  for (const item of ids) {
+    try {
+      const today = getDateStr(0);
+      const desde = getDateStr(-60);
+      const data = await bcraGet(`https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/${item.id}?desde=${desde}&hasta=${today}&limit=5`);
+      if (data && data.results && data.results.detalle && data.results.detalle.length > 0) {
+        const last = data.results.detalle[0];
+        const el = document.getElementById(item.elVal);
+        el.textContent = item.fmt(last.valor);
+        el.classList.remove('loading-val');
+        document.getElementById(item.elFecha).textContent = formatFecha(last.fecha);
+      } else {
+        document.getElementById(item.elVal).textContent = 'Sin datos';
+        document.getElementById(item.elVal).classList.remove('loading-val');
+      }
+    } catch(e) {
+      document.getElementById(item.elVal).textContent = 'Error';
+      document.getElementById(item.elVal).classList.remove('loading-val');
+    }
+  }
+}
+
+function formatBillones(v) {
+  if (v >= 1000000) return (v/1000000).toFixed(2) + ' bill.';
+  if (v >= 1000) return (v/1000).toFixed(1) + ' mil mill.';
+  return v.toLocaleString('es-AR');
+}
+
+function getDateStr(offsetDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().split('T')[0];
+}
+
+function formatFecha(f) {
+  if (!f) return '–';
+  const [y,m,d] = f.split('-');
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+}
+
+async function selectVar(id, name, el) {
+  currentVarId = id;
+  document.querySelectorAll('.var-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mon-chart-title').innerHTML = name.toUpperCase() + ' <span id="mon-chart-sub">últimos 180 días</span>';
+  await fetchVarChart(id, name);
+}
+
+async function fetchVarChart(id, name) {
+  const canvas = document.getElementById('chartMonetaria');
+  const ctx = canvas.getContext('2d');
+  if (monChartInstance) { monChartInstance.destroy(); monChartInstance = null; }
+
+  // Mostrar loader
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#3d4558';
+  ctx.font = '12px IBM Plex Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('Cargando desde BCRA…', canvas.width/2, canvas.height/2);
+
+  const today = getDateStr(0);
+  const desde = getDateStr(-180);
+  const data = await bcraGet(`https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/${id}?desde=${desde}&hasta=${today}&limit=1000`);
+
+  if (!data || !data.results || !data.results.detalle) {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillText('No se pudo obtener datos del BCRA', canvas.width/2, canvas.height/2);
+    return;
+  }
+
+  const detalle = [...data.results.detalle].reverse();
+  const labels = detalle.map(d => {
+    const [y,m,dia] = d.fecha.split('-');
+    return `${dia}/${m}`;
+  });
+  const values = detalle.map(d => d.valor);
+
+  monChartInstance = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: emaeLabels,
-      datasets: [
-        { label: 'EMAE oficial', data: emaeOfic, borderColor: '#3ecf8e', backgroundColor: 'rgba(62,207,142,0.08)', tension: .3, pointRadius: 2, borderWidth: 2, fill: true, spanGaps: false },
-        { label: 'Proyección', data: emaeProy, borderColor: 'rgba(230,168,50,0.7)', backgroundColor: 'rgba(230,168,50,0.04)', tension: .3, pointRadius: 2, borderWidth: 2, borderDash: [5,4], fill: true, spanGaps: false }
-      ]
+      labels,
+      datasets: [{
+        label: name,
+        data: values,
+        borderColor: '#4d9fff',
+        backgroundColor: 'rgba(77,159,255,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2
+      }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y != null ? c.parsed.y.toFixed(1) : '—') }}},
-      scales: {
-        x: { ticks: { color: '#3e4660', font: { size: 10 }, autoSkip: true, maxTicksLimit: 12, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.03)' }},
-        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }}, grid: { color: 'rgba(255,255,255,0.04)' }, min: 160 }
+      ...chartOpts(),
+      plugins: {
+        ...chartOpts().plugins,
+        legend: { display: false }
       }
     }
   });
+}
 
-  // ── TAMAR ────────────────────────────────────────────────────
-  const tamarLabels = ['Ene 24','Abr','Jul','Oct','Ene 25','Abr','Jul','Oct','Ene 26','Feb','Mar','Abr*','Jul*','Oct*','Dic*'];
-  const tamarOfic   = [133, 97, 75, 58, 38, 36, 35, 34, 32, 30.5, 28.8, 27.2, null, null, null];
-  const tamarProy   = [null,null,null,null,null,null,null,null,null,null,null,27.2,25.0,23.8,23.4];
+async function fetchTablaMonetaria() {
+  const data = await bcraGet('https://api.bcra.gob.ar/estadisticas/v4.0/monetarias?limit=50&categoria=Principales+Variables');
+  const tbody = document.getElementById('tbody-monetaria');
 
-  new Chart(document.getElementById('tamarChart'), {
+  if (!data || !data.results) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red);font-family:var(--mono)">No se pudo conectar con la API del BCRA</td></tr>';
+    return;
+  }
+
+  const rows = data.results.slice(0,30);
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.descripcion}</td>
+      <td style="color:var(--text-muted)">${r.categoria || '–'}</td>
+      <td style="text-align:center">
+        <span class="badge badge-${r.periodicidad === 'D' ? '1' : r.periodicidad === 'M' ? '3' : '2'}">
+          ${r.periodicidad === 'D' ? 'Diaria' : r.periodicidad === 'M' ? 'Mensual' : r.periodicidad || '–'}
+        </span>
+      </td>
+      <td class="num" style="color:var(--accent)">${r.ultValorInformado != null ? r.ultValorInformado.toLocaleString('es-AR') : '–'}</td>
+      <td style="color:var(--text-muted);font-size:10px">${r.unidadExpresion || '–'}</td>
+      <td style="color:var(--text-dim)">${formatFecha(r.ultFechaInformada)}</td>
+    </tr>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+// CAMBIARIAS
+// ─────────────────────────────────────────────
+let usdChartInstance = null;
+const DESTACADAS = ['USD','EUR','BRL','GBP','UYU','CNY','CHF','JPY'];
+
+function fechaHoy() {
+  return getDateStr(0);
+}
+
+function fetchCambiariasHoy() {
+  document.getElementById('fecha-cambiaria').value = fechaHoy();
+  fetchCambiarias();
+}
+
+async function fetchCambiarias() {
+  const fecha = document.getElementById('fecha-cambiaria').value || fechaHoy();
+  document.getElementById('camb-status').textContent = 'Consultando BCRA…';
+
+  const data = await bcraGet(`https://api.bcra.gob.ar/estadisticascambiarias/v1.0/Cotizaciones?fecha=${fecha}`);
+
+  if (!data || !data.results || !data.results.detalle || data.results.detalle.length === 0) {
+    document.getElementById('camb-status').textContent = 'Sin cotizaciones para esa fecha';
+    document.getElementById('tbody-cambiaria').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);font-family:var(--mono)">Sin datos para la fecha seleccionada (puede ser feriado o fin de semana)</td></tr>';
+    document.getElementById('currency-highlights').innerHTML = '<div style="color:var(--text-muted);font-family:var(--mono);font-size:12px;padding:12px">Sin datos</div>';
+    return;
+  }
+
+  const items = data.results.detalle;
+  const fechaReal = data.results.fecha || fecha;
+  document.getElementById('camb-status').textContent = `${items.length} divisas · ${formatFecha(fechaReal)}`;
+  document.getElementById('camb-fecha-tabla').textContent = `BCRA · ${formatFecha(fechaReal)}`;
+
+  // Destacadas
+  const hl = document.getElementById('currency-highlights');
+  hl.innerHTML = DESTACADAS.map(cod => {
+    const item = items.find(i => i.codigoMoneda === cod);
+    if (!item) return '';
+    return `
+      <div class="currency-card">
+        <div class="currency-code">${item.codigoMoneda}</div>
+        <div class="currency-name">${item.descripcion.substring(0,22)}</div>
+        <div class="currency-value">$ ${item.tipoCotizacion > 0 ? item.tipoCotizacion.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:4}) : '–'}</div>
+        <div class="currency-label">Cotización ARS</div>
+        ${item.tipoPase > 0 ? `<div class="currency-label" style="margin-top:4px">Pase: ${item.tipoPase.toFixed(6)}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  // Tabla completa
+  const tbody = document.getElementById('tbody-cambiaria');
+  tbody.innerHTML = items
+    .filter(i => i.tipoCotizacion > 0)
+    .sort((a,b) => b.tipoCotizacion - a.tipoCotizacion)
+    .map(i => `
+      <tr>
+        <td style="color:var(--accent3);font-weight:500">${i.codigoMoneda}</td>
+        <td>${i.descripcion}</td>
+        <td class="num">${i.tipoPase.toFixed(6)}</td>
+        <td class="num" style="color:var(--accent)">${i.tipoCotizacion.toLocaleString('es-AR',{minimumFractionDigits:4,maximumFractionDigits:4})}</td>
+      </tr>
+    `).join('');
+}
+
+async function fetchUSDEvolution() {
+  const today = getDateStr(0);
+  const desde = getDateStr(-90);
+  const data = await bcraGet(`https://api.bcra.gob.ar/estadisticascambiarias/v1.0/Cotizaciones/USD?fechadesde=${desde}&fechahasta=${today}&limit=1000`);
+
+  const canvas = document.getElementById('chartUSD');
+  if (!data || !data.results || data.results.length === 0) {
+    canvas.parentElement.innerHTML = '<div class="error-box">No se pudo cargar evolución USD desde BCRA</div>';
+    return;
+  }
+
+  const sorted = [...data.results].reverse();
+  const labels = sorted.map(d => {
+    const [y,m,dia] = d.fecha.split('-');
+    return `${dia}/${m}`;
+  });
+  const values = sorted.map(d => {
+    const usd = d.detalle ? d.detalle.find(x => x.codigoMoneda === 'USD') : null;
+    return usd ? usd.tipoCotizacion : null;
+  }).filter(v => v !== null);
+
+  if (usdChartInstance) usdChartInstance.destroy();
+  usdChartInstance = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: tamarLabels,
-      datasets: [
-        { label: 'TAMAR TNA', data: tamarOfic, borderColor: '#f7b731', backgroundColor: 'rgba(247,183,49,0.07)', tension: .3, pointRadius: 3, borderWidth: 2, fill: true },
-        { label: 'Proyección REM', data: tamarProy, borderColor: 'rgba(230,168,50,0.6)', backgroundColor: 'rgba(230,168,50,0.04)', tension: .3, pointRadius: 3, borderWidth: 2, borderDash: [5,4], fill: true }
-      ]
+      labels,
+      datasets: [{
+        label: 'USD/ARS Oficial BCRA',
+        data: values,
+        borderColor: '#ffcc00',
+        backgroundColor: 'rgba(255,204,0,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2
+      }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y != null ? c.parsed.y.toFixed(1) + '%' : '—') }}},
-      scales: {
-        x: { ticks: { color: '#3e4660', font: { size: 10 }}, grid: { color: 'rgba(255,255,255,0.03)' }},
-        y: { ticks: { color: '#3e4660', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 0 }
-      }
+      ...chartOpts(),
+      plugins: { ...chartOpts().plugins, legend:{ display:false } }
     }
   });
+}
+
+// ─────────────────────────────────────────────
+// DEUDORES
+// ─────────────────────────────────────────────
+function limpiarCUIT(v) {
+  return v.replace(/[-\s]/g,'');
+}
+
+async function buscarDeudor() {
+  const raw = document.getElementById('cuit-input').value;
+  const cuit = limpiarCUIT(raw);
+  if (cuit.length !== 11) {
+    document.getElementById('deudor-result').innerHTML = '<div class="error-box">⚠ Ingresá exactamente 11 dígitos (sin guiones)</div>';
+    return;
+  }
+
+  document.getElementById('deudor-result').innerHTML = '<div class="info-box">Consultando Central de Deudores del BCRA…</div>';
+  document.getElementById('deudor-cheques').innerHTML = '';
+
+  const data = await bcraGet(`https://api.bcra.gob.ar/CentralDeDeudores/v1.0/Deudas/${cuit}`);
+
+  if (!data) {
+    document.getElementById('deudor-result').innerHTML = '<div class="error-box">No se pudo conectar con la API del BCRA</div>';
+    return;
+  }
+  if (data.status === 404) {
+    document.getElementById('deudor-result').innerHTML = '<div class="error-box">No se encontraron datos para el CUIT/CUIL/CDI ingresado</div>';
+    return;
+  }
+  if (data.status === 400) {
+    document.getElementById('deudor-result').innerHTML = `<div class="error-box">${data.errorMessages ? data.errorMessages.join(', ') : 'Parámetro erróneo'}</div>`;
+    return;
+  }
+
+  const res = data.results;
+  if (!res) {
+    document.getElementById('deudor-result').innerHTML = '<div class="error-box">Respuesta inesperada del servidor</div>';
+    return;
+  }
+
+  const situacionColor = (s) => ['','badge-1','badge-2','badge-3','badge-4','badge-5'][s] || 'badge-5';
+  const situacionLabel = (s) => ['','Normal','Seg. Especial','Con Problemas','Alto Riesgo','Irrecuperable'][s] || `Sit. ${s}`;
+
+  let html = `
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="section-title" style="font-size:16px;margin-bottom:12px">
+        ${res.denominacion || '–'}
+        <small>CUIT/CUIL/CDI: ${cuit}</small>
+      </div>
+  `;
+
+  if (!res.periodos || res.periodos.length === 0) {
+    html += '<div style="color:var(--text-muted);font-family:var(--mono);font-size:12px;padding:12px">Sin deudas informadas en el sistema financiero</div>';
+  } else {
+    for (const periodo of res.periodos) {
+      const [anio, mes] = [periodo.periodo.substring(0,4), periodo.periodo.substring(4,6)];
+      const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      html += `<div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-bottom:12px;letter-spacing:1px;text-transform:uppercase">Período: ${meses[parseInt(mes)]} ${anio}</div>`;
+      html += `<div style="overflow-x:auto"><table class="data-table" style="margin-bottom:20px">
+        <thead><tr>
+          <th>Entidad</th><th>Situación</th><th class="num">Monto (miles $)</th>
+          <th class="num">Días Atraso</th><th>Situación Jurídica</th><th>En Revisión</th>
+        </tr></thead><tbody>`;
+      for (const ent of periodo.entidades) {
+        html += `<tr>
+          <td>${ent.entidad}</td>
+          <td><span class="badge ${situacionColor(ent.situacion)}">${situacionLabel(ent.situacion)}</span></td>
+          <td class="num" style="color:var(--accent)">${ent.monto != null ? ent.monto.toLocaleString('es-AR') : '–'}</td>
+          <td class="num">${ent.diasAtrasoPago || 0}</td>
+          <td>${ent.situacionJuridica ? '<span style="color:var(--red)">Sí</span>' : '–'}</td>
+          <td>${ent.enRevision ? '<span style="color:var(--accent4)">Sí</span>' : '–'}</td>
+        </tr>`;
+      }
+      html += '</tbody></table></div>';
+    }
+  }
+  html += '</div>';
+  document.getElementById('deudor-result').innerHTML = html;
+
+  // Cheques rechazados
+  fetchChequesRechazados(cuit);
+}
+
+async function fetchChequesRechazados(cuit) {
+  const data = await bcraGet(`https://api.bcra.gob.ar/CentralDeDeudores/v1.0/Deudas/ChequesRechazados/${cuit}`);
+  const el = document.getElementById('deudor-cheques');
+  if (!data || !data.results || !data.results.causales || data.results.causales.length === 0) {
+    el.innerHTML = '<div class="chart-card"><div style="font-family:var(--mono);font-size:12px;color:var(--text-muted)">✓ Sin cheques rechazados registrados</div></div>';
+    return;
+  }
+
+  let html = '<div class="chart-card"><div class="section-title" style="font-size:14px;margin-bottom:12px">CHEQUES RECHAZADOS</div>';
+  for (const causal of data.results.causales) {
+    html += `<div style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Causal: ${causal.causal}</div>`;
+    for (const ent of causal.entidades) {
+      html += `<div style="overflow-x:auto"><table class="data-table" style="margin-bottom:16px">
+        <thead><tr><th>Nro. Cheque</th><th>Fecha Rechazo</th><th class="num">Monto ($)</th><th>Estado Multa</th><th>Fecha Pago</th></tr></thead><tbody>`;
+      for (const ch of ent.detalle) {
+        html += `<tr>
+          <td>${ch.nroCheque}</td>
+          <td>${formatFecha(ch.fechaRechazo)}</td>
+          <td class="num" style="color:var(--accent2)">${ch.monto.toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+          <td><span class="badge ${ch.estadoMulta === 'IMPAGA' ? 'badge-5' : 'badge-1'}">${ch.estadoMulta || '–'}</span></td>
+          <td>${ch.fechaPago ? formatFecha(ch.fechaPago) : '–'}</td>
+        </tr>`;
+      }
+      html += '</tbody></table></div>';
+    }
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+async function buscarHistorico() {
+  const raw = document.getElementById('cuit-input').value;
+  const cuit = limpiarCUIT(raw);
+  if (cuit.length !== 11) {
+    document.getElementById('deudor-result').innerHTML = '<div class="error-box">⚠ Ingresá exactamente 11 dígitos</div>';
+    return;
+  }
+
+  document.getElementById('deudor-result').innerHTML = '<div class="info-box">Consultando histórico 24 meses…</div>';
+  const data = await bcraGet(`https://api.bcra.gob.ar/CentralDeDeudores/v1.0/Deudas/Historicas/${cuit}`);
+
+  if (!data || data.status === 404) {
+    document.getElementById('deudor-result').innerHTML = '<div class="error-box">No se encontraron datos históricos</div>';
+    return;
+  }
+
+  const res = data.results;
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const situacionColor = (s) => ['','badge-1','badge-2','badge-3','badge-4','badge-5'][s] || 'badge-5';
+  const situacionLabel = (s) => ['','Normal','Seg. Especial','Con Problemas','Alto Riesgo','Irrecuperable'][s] || `Sit. ${s}`;
+
+  let html = `<div class="chart-card">
+    <div class="section-title" style="font-size:16px;margin-bottom:12px">
+      ${res.denominacion || '–'} — Histórico 24 meses
+      <small>CUIT/CUIL/CDI: ${cuit}</small>
+    </div>
+    <div style="overflow-x:auto"><table class="data-table">
+      <thead><tr><th>Período</th><th>Entidad</th><th>Situación</th><th class="num">Monto (miles $)</th><th>En Revisión</th></tr></thead>
+      <tbody>`;
+
+  for (const p of (res.periodos || [])) {
+    const [anio, mes] = [p.periodo.substring(0,4), p.periodo.substring(4,6)];
+    for (const ent of p.entidades) {
+      html += `<tr>
+        <td style="white-space:nowrap">${meses[parseInt(mes)]} ${anio}</td>
+        <td>${ent.entidad}</td>
+        <td><span class="badge ${situacionColor(ent.situacion)}">${situacionLabel(ent.situacion)}</span></td>
+        <td class="num" style="color:var(--accent)">${ent.monto != null ? ent.monto.toLocaleString('es-AR') : '–'}</td>
+        <td>${ent.enRevision ? '<span style="color:var(--accent4)">Sí</span>' : '–'}</td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('deudor-result').innerHTML = html;
+  document.getElementById('deudor-cheques').innerHTML = '';
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+(async function init() {
+  // Iniciar fecha cambiaria con hoy
+  document.getElementById('fecha-cambiaria').value = fechaHoy();
+
+  // Cargar monetarias en background
+  fetchMonetariasKPIs();
+  fetchTablaMonetaria();
+  fetchVarChart(1, 'Reservas Internacionales');
+
+  // Cargar cambiarias
+  fetchCambiariasHoy();
+  fetchUSDEvolution();
+
+  updateTimestamp();
+  setInterval(updateTimestamp, 60000);
+})();
 </script>
 </body>
 </html>
