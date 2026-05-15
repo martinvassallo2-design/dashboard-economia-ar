@@ -434,19 +434,19 @@
   <div class="grid-4">
     <div class="card">
       <div class="card-label">IPC Mensual</div>
-      <div class="card-value">3,4%</div>
-      <div class="card-sub">Marzo 2026 · INDEC</div>
-      <div class="card-delta up">▲ vs feb 2,4%</div>
+      <div class="card-value">2,6%</div>
+      <div class="card-sub">Abril 2026 · INDEC</div>
+      <div class="card-delta down">▼ vs mar 3,4%</div>
     </div>
     <div class="card accent2">
       <div class="card-label">Acumulado 2026</div>
-      <div class="card-value">9,4%</div>
-      <div class="card-sub">Enero – Marzo 2026</div>
+      <div class="card-value">12,3%</div>
+      <div class="card-sub">Enero – Abril 2026</div>
     </div>
     <div class="card accent3">
       <div class="card-label">Interanual</div>
-      <div class="card-value">32,6%</div>
-      <div class="card-sub">Mar 2025 → Mar 2026</div>
+      <div class="card-value">32,4%</div>
+      <div class="card-sub">Abr 2025 → Abr 2026</div>
       <div class="card-delta down">↓ tendencia baja</div>
     </div>
     <div class="card accent4">
@@ -465,7 +465,7 @@
 
   <div class="grid-2">
     <div class="chart-card">
-      <div class="chart-title">IPC POR DIVISIÓN — VARIACIÓN MENSUAL MARZO 2026 <span>INDEC</span></div>
+      <div class="chart-title">IPC POR DIVISIÓN — VARIACIÓN MENSUAL ABRIL 2026 <span>INDEC</span></div>
       <div class="chart-wrap">
         <canvas id="chartRubros"></canvas>
       </div>
@@ -480,19 +480,19 @@
 
   <div class="grid-3">
     <div class="card">
-      <div class="card-label">Mayor suba — Mar 2026</div>
-      <div class="card-value small">12,1%</div>
-      <div class="card-sub">Educación</div>
+      <div class="card-label">Mayor suba — Abr 2026</div>
+      <div class="card-value small">4,4%</div>
+      <div class="card-sub">Transporte</div>
     </div>
     <div class="card accent3">
       <div class="card-label">IPC General</div>
-      <div class="card-value small">3,4%</div>
-      <div class="card-sub">Marzo 2026</div>
+      <div class="card-value small">2,6%</div>
+      <div class="card-sub">Abril 2026</div>
     </div>
     <div class="card accent2">
-      <div class="card-label">Menor suba — Mar 2026</div>
-      <div class="card-value small">1,3%</div>
-      <div class="card-sub">Equipam. y hogar</div>
+      <div class="card-label">Menor suba — Abr 2026</div>
+      <div class="card-value small">1,0%</div>
+      <div class="card-sub">Recreación y cultura</div>
     </div>
   </div>
 </div>
@@ -843,10 +843,10 @@ function chartOpts(extra={}) {
 
   // IPC mensual 2025 + 2026 + proyección
   const labels2025 = meses.map(m=>m+' 25');
-  const labels2026 = ['Ene 26','Feb 26','Mar 26','Abr 26(p)','May 26(p)','Jun 26(p)','Jul 26(p)','Ago 26(p)','Sep 26(p)','Oct 26(p)','Nov 26(p)','Dic 26(p)'];
+  const labels2026 = ['Ene 26','Feb 26','Mar 26','Abr 26','May 26(p)','Jun 26(p)','Jul 26(p)','Ago 26(p)','Sep 26(p)','Oct 26(p)','Nov 26(p)','Dic 26(p)'];
   const data2025 = [2.9,2.4,3.7,3.3,3.3,3.2,2.7,4.2,3.5,2.4,2.4,2.7];
-  const data2026real = [2.3,2.4,3.4,null,null,null,null,null,null,null,null,null];
-  const data2026proy = [null,null,null,2.8,2.7,2.5,2.5,2.4,2.4,2.3,2.3,2.2];
+  const data2026real = [2.3,2.4,3.4,2.6,null,null,null,null,null,null,null,null];
+  const data2026proy = [null,null,null,null,2.5,2.3,2.3,2.2,2.2,2.1,2.1,2.0];
 
   new Chart(document.getElementById('chartIPC'), {
     type: 'bar',
@@ -887,13 +887,13 @@ function chartOpts(extra={}) {
   new Chart(document.getElementById('chartRubros'), {
     type: 'bar',
     data: {
-      labels: ['Educación','Salud','Comunic.','Rest./Hotel.','Transp.','Alim./Beb.','Vivienda','IPC Gral','Ropa','Equipam.'],
+      labels: ['Transp.','Educación','Salud','Comunic.','Vivienda','IPC Gral','Alim./Beb.','Rest./Hotel.','Ropa','Recr./Cult.'],
       datasets: [{
         label: 'Var. % mensual',
-        data: [12.1,5.2,4.8,4.1,3.8,3.4,2.9,3.4,2.1,1.3],
+        data: [4.4,4.2,3.1,3.1,3.2,2.6,1.5,2.1,0.0,1.0],
         backgroundColor: data => {
-          const v = [12.1,5.2,4.8,4.1,3.8,3.4,2.9,3.4,2.1,1.3][data.dataIndex];
-          return v > 3.4 ? 'rgba(255,77,109,0.6)' : v === 3.4 ? 'rgba(255,204,0,0.6)' : 'rgba(0,229,160,0.5)';
+          const v = [4.4,4.2,3.1,3.1,3.2,2.6,1.5,2.1,0.0,1.0][data.dataIndex];
+          return v > 2.6 ? 'rgba(255,77,109,0.6)' : v === 2.6 ? 'rgba(255,204,0,0.6)' : 'rgba(0,229,160,0.5)';
         },
         borderRadius: 3,
         borderWidth: 0
